@@ -116,6 +116,9 @@ window.__ModuleLoader__.load({
 .pn-hl-item{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-radius:8px;background:color-mix(in srgb,#ffd97d 16%,transparent);border:1px solid color-mix(in srgb,#e0a92e 28%,transparent);font-size:13.5px;line-height:1.75}
 .pn-hl-index{flex:none;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:color-mix(in srgb,#e0a92e 40%,transparent);color:#3a2c07;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;font-variant-numeric:tabular-nums}
 .pn-hl-text{flex:1;min-width:0;overflow-wrap:anywhere}
+.pn-hl-remove{flex:none;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:6px;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer;margin-top:1px}
+.pn-hl-remove:hover{background:color-mix(in srgb,#d9482b 12%,transparent);color:#b23b24}
+.pn-hl-remove:disabled{opacity:.45;cursor:default}
 .pn-btn-on{background:color-mix(in srgb,var(--pn-accent) 16%,transparent);border-color:color-mix(in srgb,var(--pn-accent) 45%,transparent);color:var(--pn-accent)}
 .pn-md h1{font-size:21px;line-height:1.35;margin:4px 0 14px;letter-spacing:-.02em}
 .pn-md h2{font-size:16.5px;margin:24px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--dsw-alias-border-l2)}
@@ -359,7 +362,8 @@ window.__ModuleLoader__.load({
       text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
       text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
       // == may wrap **bold**, so allow one nested level inside the markers.
-      text = text.replace(/==([^=\n]+)==/g, (match, inner) => `<mark class="pn-hl">${inner}</mark>`);
+      // A highlight may wrap across a soft line break inside one paragraph.
+      text = text.replace(/==([^=]+?)==/g, (match, inner) => `<mark class="pn-hl">${inner}</mark>`);
       text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
       text = text.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" target="_blank" rel="noreferrer">$2</a>');
       return text;
@@ -378,7 +382,7 @@ window.__ModuleLoader__.load({
 
       const flushParagraph = () => {
         if (!paragraph.length) return;
-        html += `<p>${paragraph.map(inlineMarkdown).join(' ')}</p>`;
+        html += `<p>${inlineMarkdown(paragraph.join('\n'))}</p>`;
         paragraph = [];
       };
       const closeList = () => {
@@ -514,14 +518,9 @@ window.__ModuleLoader__.load({
           i += 2;
           continue;
         }
-        // Highlight marker: drop the == but keep the text it wraps.
+        // Highlight marker: drop both == tokens and keep parsing the inside, so
+        // nested **bold** inside a highlight is projected correctly too.
         if (text[i] === '=' && text[i + 1] === '=') {
-          const end = text.indexOf('==', i + 2);
-          if (end > i) {
-            push(i + 2, end);
-            i = end + 2;
-            continue;
-          }
           i += 2;
           continue;
         }
@@ -568,28 +567,21 @@ window.__ModuleLoader__.load({
       return { plain, map };
     }
 
-    // Finds `needle` inside the rendered text of the Markdown and wraps the
-    // matching source range in ==...==. Returns the new source or null.
-    //
-    // The rendered text is not identical to the source (Markdown markers are
-    // stripped, lines are joined), so the needle is located in a syntax-free
-    // projection of the source, and the projection carries an index map back
-    // into the original bytes. Matching is done on the exact substring so the
-    // result stays aligned with what the user actually selected.
-    function applyHighlightToSource(source, needle) {
+    // Finds `needle` inside the rendered text of the Markdown and returns the
+    // matching source range. The rendered text is not identical to the source
+    // (Markdown markers are stripped, lines are joined), so matching is done on
+    // a syntax-free projection that carries an index map back to the source.
+    function locateSourceRange(source, needle) {
       const text = String(source || '');
       const target = String(needle || '').trim();
       if (!target) return null;
       const { plain, map } = plainTextWithMap(text);
-      // Work on a whitespace-free projection so every index lines up with one
-      // non-space character of the plain text.
       const flatPlain = plain.replace(/\s+/g, '');
       const flatTarget = target.replace(/\s+/g, '');
       if (!flatTarget) return null;
       const index = flatPlain.indexOf(flatTarget);
       if (index < 0) return null;
 
-      // Walk the projection to find where the flat index lands.
       let flatSeen = 0;
       let plainIndex = -1;
       for (let k = 0; k < plain.length; k += 1) {
@@ -602,7 +594,6 @@ window.__ModuleLoader__.load({
       }
       if (plainIndex < 0) return null;
 
-      // The needle spans this many non-space characters.
       const wanted = flatTarget.length;
       let counted = 0;
       let plainEnd = plainIndex;
@@ -612,25 +603,134 @@ window.__ModuleLoader__.load({
       }
       if (plainEnd <= plainIndex) return null;
 
-      const sourceStart = map[plainIndex];
-      const sourceEnd = map[plainEnd - 1] + 1;
-      if (sourceStart === undefined || sourceEnd === undefined) return null;
-
-      // Verify the round trip: the source range must read back as the needle.
-      const slice = text.slice(sourceStart, sourceEnd);
-      const slicePlain = slice.replace(/\s+/g, '');
+      const start = map[plainIndex];
+      const end = map[plainEnd - 1] + 1;
+      if (start === undefined || end === undefined) return null;
+      const slice = text.slice(start, end);
+      const slicePlain = plainTextWithMap(slice).plain.replace(/\s+/g, '');
       if (slicePlain !== flatTarget) return null;
+      return { start, end };
+    }
 
-      const before = text.slice(0, sourceStart);
-      const after = text.slice(sourceEnd);
-      if (before.endsWith('==') || after.startsWith('==')) return null;
-      const selected = text.slice(sourceStart, sourceEnd);
-      // If the selection sits inside **bold**, put the highlight markers outside
-      // it so both render correctly: **text** -> ==**text**==
-      if (before.endsWith('**') && after.startsWith('**')) {
-        return `${before.slice(0, -2)}==**${selected}**==${after.slice(2)}`;
+    function boldSpans(source) {
+      const spans = [];
+      const pattern = /\*\*([^*\n]+)\*\*/g;
+      let match;
+      while ((match = pattern.exec(source))) {
+        spans.push({
+          open: match.index,
+          close: match.index + match[0].length - 2,
+          innerStart: match.index + 2,
+          innerEnd: match.index + match[0].length - 2,
+        });
       }
-      return `${before}==${selected}==${after}`;
+      return spans;
+    }
+
+    // A highlight that starts or ends inside **bold** would split the bold
+    // markers. If the selection partially overlaps a bold span, expand that
+    // edge to the whole span; if the selection is fully inside bold, keep it
+    // inside so only the selected words are marked.
+    function expandBoldRange(source, range) {
+      let { start, end } = range;
+      for (const span of boldSpans(source)) {
+        const inside = start >= span.innerStart && end <= span.innerEnd;
+        const overlaps = start < span.close + 2 && end > span.open;
+        if (!inside && overlaps) {
+          start = Math.min(start, span.open);
+          end = Math.max(end, span.close + 2);
+        }
+      }
+      return { start, end };
+    }
+
+    function highlightSpans(source) {
+      const spans = [];
+      const pattern = /==([^=]+?)==/g;
+      let match;
+      while ((match = pattern.exec(source))) {
+        spans.push({
+          open: match.index,
+          close: match.index + match[0].length - 2,
+          innerStart: match.index + 2,
+          innerEnd: match.index + match[0].length - 2,
+          inner: match[1],
+        });
+      }
+      return spans;
+    }
+
+    function cutRanges(source, ranges) {
+      const ordered = [...ranges].sort((a, b) => b[0] - a[0]);
+      let output = source;
+      for (const [start, end] of ordered) {
+        output = output.slice(0, start) + output.slice(end);
+      }
+      return output;
+    }
+
+    function removeHighlightAt(source, index) {
+      const spans = highlightSpans(source);
+      const span = spans[index];
+      if (!span) return null;
+      return cutRanges(source, [
+        [span.open, span.open + 2],
+        [span.close, span.close + 2],
+      ]);
+    }
+
+    function selectionIsHighlighted(source, needle) {
+      const located = locateSourceRange(source, needle);
+      if (!located) return false;
+      const range = expandBoldRange(source, located);
+      return highlightSpans(source).some(
+        (span) => range.start >= span.innerStart && range.end <= span.innerEnd,
+      );
+    }
+
+    // Adds a ==highlight== around the selection, or removes the highlight when
+    // the selection is already inside one. Selections that partially overlap an
+    // existing mark are rejected so undo never swallows an older highlight.
+    function toggleHighlightToSource(source, needle) {
+      const located = locateSourceRange(source, needle);
+      if (!located) return null;
+      const range = expandBoldRange(source, located);
+      const spans = highlightSpans(source);
+
+      const containing = spans.find(
+        (span) => range.start >= span.innerStart && range.end <= span.innerEnd,
+      );
+      if (containing) {
+        return {
+          text: cutRanges(source, [
+            [containing.open, containing.open + 2],
+            [containing.close, containing.close + 2],
+          ]),
+          removed: true,
+        };
+      }
+
+      const start = range.start;
+      const end = range.end;
+      const overlapping = spans.filter(
+        (span) => span.innerStart < end && span.innerEnd > start,
+      );
+      // Merging with an existing highlight makes a later undo delete both the
+      // old and the new text. Reject the overlap instead of silently swallowing
+      // a highlight the reader already made.
+      if (overlapping.length) return { overlap: true };
+
+      return {
+        text: `${source.slice(0, start)}==${source.slice(start, end)}==${source.slice(end)}`,
+        removed: false,
+      };
+    }
+
+    // Kept for callers/tests that only want to add a highlight. Returns the new
+    // source, or null when the selection is inside an existing highlight.
+    function applyHighlightToSource(source, needle) {
+      const result = toggleHighlightToSource(source, needle);
+      return result && !result.removed && !result.overlap ? result.text : null;
     }
 
     function copyText(text) {
@@ -1612,7 +1712,7 @@ window.__ModuleLoader__.load({
       const highlightCount = useMemo(() => {
         const text = detail?.notes || '';
         if (!text) return 0;
-        return (text.match(/==[^=\n]+==/g) || []).length;
+        return (text.match(/==[^=]+?==/g) || []).length;
       }, [detail?.notes]);
 
       const showToast = (text, kind = 'info') => {
@@ -2128,7 +2228,8 @@ window.__ModuleLoader__.load({
       };
 
       // Turns a browser selection inside the rendered notes into a ==highlight==
-      // in the Markdown source, then saves it.
+      // in the Markdown source, or removes the highlight when the selection is
+      // already inside one. Saves either result immediately.
       const highlightSelection = async () => {
         const selection = window.getSelection?.();
         const picked = String(selection?.toString() || '').trim();
@@ -2140,25 +2241,53 @@ window.__ModuleLoader__.load({
         const source = detail?.notes || '';
         const target = picked.replace(/\s+/g, ' ').trim();
         // The rendered text drops Markdown syntax, so match against a syntax-free
-        // copy of the source first and then re-inject the markers at the right
+        // copy of the source first and then re-inject/remove markers at the right
         // offsets in the original.
-        const updated = applyHighlightToSource(source, target);
-        if (updated === null) {
+        const result = toggleHighlightToSource(source, target);
+        if (result?.overlap) {
+          showToast('这段和已有高亮重叠，先撤销那处再试', 'error');
+          return;
+        }
+        if (!result) {
           showToast('这段文字在原文里找不到，试试选中更完整的一句', 'error');
           return;
         }
         setSavingNotes(true);
         try {
-          const result = await api('saveNotes', {
+          await api('saveNotes', {
+            feedId: selectedEpisode?.feedId || feedId,
+            guid: selectedEpisode?.guid || selectedGuid,
+            text: result.text,
+          });
+          setDetailVersion((value) => value + 1);
+          setEpisodeVersion((value) => value + 1);
+          showToast(result.removed ? '已撤销高亮' : '已高亮并保存', 'ok');
+        } catch (error) {
+          showToast(error?.message || '高亮失败', 'error');
+        } finally {
+          setSavingNotes(false);
+        }
+      };
+
+      const undoHighlight = async (index) => {
+        const source = detail?.notes || '';
+        const updated = removeHighlightAt(source, index);
+        if (updated === null) {
+          showToast('找不到这处高亮', 'error');
+          return;
+        }
+        setSavingNotes(true);
+        try {
+          await api('saveNotes', {
             feedId: selectedEpisode?.feedId || feedId,
             guid: selectedEpisode?.guid || selectedGuid,
             text: updated,
           });
           setDetailVersion((value) => value + 1);
           setEpisodeVersion((value) => value + 1);
-          showToast('已高亮并保存', 'ok');
+          showToast('已撤销高亮', 'ok');
         } catch (error) {
-          showToast(error?.message || '高亮失败', 'error');
+          showToast(error?.message || '撤销失败', 'error');
         } finally {
           setSavingNotes(false);
         }
@@ -2195,6 +2324,7 @@ window.__ModuleLoader__.load({
           }
           setHlSelection({
             text: picked,
+            undo: selectionIsHighlighted(detail.notes, picked),
             top: Math.max(8, rect.top - 40),
             left: Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - 150)),
           });
@@ -2684,15 +2814,27 @@ window.__ModuleLoader__.load({
                                       h(
                                         'div',
                                         { className: 'pn-hl-list' },
-                                        (detail.notes.match(/==([^=\n]+)==/g) || []).map((item, index) =>
+                                        (highlightSpans(detail.notes) || []).map((span, index) =>
                                           h(
                                             'div',
-                                            { key: `${index}-${item.slice(0, 12)}`, className: 'pn-hl-item' },
+                                            { key: `${index}-${span.inner.slice(0, 12)}`, className: 'pn-hl-item' },
                                             h('span', { className: 'pn-hl-index' }, String(index + 1)),
                                             h(
                                               'span',
                                               { className: 'pn-hl-text' },
-                                              item.replace(/^==/, '').replace(/==$/, ''),
+                                              span.inner.replace(/\s+/g, ' ').trim(),
+                                            ),
+                                            h(
+                                              'button',
+                                              {
+                                                type: 'button',
+                                                className: 'pn-hl-remove',
+                                                title: '撤销这处高亮',
+                                                'aria-label': '撤销这处高亮',
+                                                disabled: savingNotes,
+                                                onClick: () => undoHighlight(index),
+                                              },
+                                              h(Icon, { name: 'close', size: 11 }),
                                             ),
                                           ),
                                         ),
@@ -2705,9 +2847,9 @@ window.__ModuleLoader__.load({
                                       { className: 'pn-hlbar', style: { top: hlSelection.top, left: hlSelection.left } },
                                       h(
                                         'button',
-                                        { type: 'button', onClick: highlightSelection },
-                                        h(Icon, { name: 'highlighter', size: 12 }),
-                                        '高亮这段',
+                                        { type: 'button', onClick: highlightSelection, title: hlSelection.undo ? '撤销这处高亮' : '高亮选中文字' },
+                                        h(Icon, { name: hlSelection.undo ? 'close' : 'highlighter', size: 12 }),
+                                        hlSelection.undo ? '撤销高亮' : '高亮这段',
                                       ),
                                     )
                                   : null,
