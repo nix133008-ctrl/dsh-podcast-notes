@@ -1,0 +1,53 @@
+{
+  "name": "dsh-podcast-notes",
+  "version": "0.1.0",
+  "description": "播客订阅更新、逐字稿转写与专家访谈笔记整理，常驻左侧栏。",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "icon": "icon.svg",
+  "files": [
+    "index.js",
+    "lib",
+    "client.js",
+    "icon.svg",
+    "README.md",
+    "docs"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-slots"
+      ]
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "podcast",
+    "rss",
+    "transcript",
+    "notes"
+  ],
+  "homepage": "https://github.com/nix133008-ctrl/dsh-podcast-notes#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nix133008-ctrl/dsh-podcast-notes.git"
+  },
+  "author": "nix133008-ctrl"
+}
