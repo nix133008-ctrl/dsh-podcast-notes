@@ -1,6 +1,6 @@
 {
   "name": "dsh-podcast-notes",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "播客订阅更新、逐字稿转写与专家访谈笔记整理，常驻左侧栏。",
   "type": "module",
   "main": "index.js",
@@ -16,6 +16,8 @@
     "lib",
     "client.js",
     "icon.svg",
+    "cordis.patch.yml",
+    "vendor",
     "README.md",
     "docs"
   ],
