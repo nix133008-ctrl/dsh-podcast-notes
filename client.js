@@ -13,7 +13,7 @@ window.__ModuleLoader__.load({
       const style = document.createElement('style');
       style.id = STYLE_ID;
       style.textContent = `
-.pn-root{--pn-accent:#d9482b;--pn-accent-soft:color-mix(in srgb,var(--pn-accent) 10%,transparent);height:100%;min-height:420px;display:flex;flex-direction:column;overflow:hidden;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font-family:var(--ds-font-family-base,inherit)}
+.pn-root{--pn-accent:#d9482b;--pn-accent-soft:color-mix(in srgb,var(--pn-accent) 10%,transparent);height:100%;min-height:420px;display:flex;flex-direction:column;overflow:hidden;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font-family:var(--ds-font-family-base,inherit);container-type:inline-size}
 .pn-root *{box-sizing:border-box}
 .pn-root button,.pn-root input,.pn-root select,.pn-root textarea{font-family:inherit}
 .pn-header{flex:none;display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--dsw-alias-border-l2);background:linear-gradient(180deg,color-mix(in srgb,var(--pn-accent) 6%,transparent),transparent)}
@@ -148,6 +148,21 @@ window.__ModuleLoader__.load({
 .pn-modal-head{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--dsw-alias-border-l2);position:sticky;top:0;background:var(--dsw-alias-bg-layer-1);z-index:1}
 .pn-modal-head b{font-size:14px;flex:1}
 .pn-modal-body{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.pn-env{display:flex;flex-direction:column;gap:8px;padding:11px 12px;border-radius:10px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2)}
+.pn-env-head{display:flex;align-items:center;gap:7px;font-size:12px}
+.pn-env-dot{width:7px;height:7px;border-radius:50%;flex:none}
+.pn-env-ok{background:var(--color-green-600,#2c8a55)}
+.pn-env-warn{background:#c2a05a}
+.pn-env-busy{background:var(--pn-accent);animation:pn-pulse 1.2s ease-in-out infinite}
+.pn-env-state{margin-left:auto;font-size:10.5px;color:var(--dsw-alias-label-secondary)}
+.pn-env-desc{font-size:11px;line-height:1.65;color:var(--dsw-alias-label-secondary)}
+.pn-env-path{font-size:10px;color:var(--dsw-alias-label-tertiary);overflow-wrap:anywhere}
+.pn-env-actions{display:flex;gap:7px;margin-top:2px}
+.pn-env-run{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.pn-env-run-head{font-size:10.5px;color:var(--dsw-alias-label-secondary)}
+.pn-env-error{color:var(--color-red-500,#c43d3d)}
+.pn-env-log{max-height:150px;overflow:auto;margin:0;padding:8px;border-radius:7px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);font-family:var(--ds-font-family-code,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:10px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--dsw-alias-label-secondary)}
+@keyframes pn-pulse{0%,100%{opacity:.45}50%{opacity:1}}
 .pn-field{display:flex;flex-direction:column;gap:5px}
 .pn-field>label{font-size:11px;color:var(--dsw-alias-label-secondary);font-weight:600}
 .pn-field>small{font-size:10.5px;color:var(--dsw-alias-label-tertiary);line-height:1.5}
@@ -164,6 +179,32 @@ window.__ModuleLoader__.load({
 .pn-toast-error{border-color:color-mix(in srgb,var(--color-red-500,#c43d3d) 50%,transparent)}
 @keyframes pn-toast-in{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
 .pn-sidebar-icon{display:inline-flex;align-items:center;justify-content:center}
+.pn-compact{min-height:0}
+.pn-compact .pn-header{padding:9px 11px;gap:8px}
+.pn-compact .pn-logo{width:30px;height:30px;border-radius:9px}
+.pn-compact .pn-title{font-size:14px}
+.pn-compact .pn-sub{display:none}
+.pn-compact .pn-head-actions{gap:4px}
+.pn-compact .pn-head-actions .pn-btn{height:28px;padding:0 8px;font-size:11px}
+.pn-compact .pn-body{display:block;min-height:0}
+.pn-compact .pn-side{height:100%;border-right:0}
+.pn-compact .pn-side-top{height:auto!important;max-height:52%;overflow:auto}
+.pn-compact .pn-feeds{grid-template-columns:repeat(auto-fill,minmax(116px,1fr));grid-auto-rows:44px}
+.pn-compact .pn-feed{padding:5px 7px;gap:6px}
+.pn-compact .pn-feed-avatar{width:26px;height:26px;border-radius:7px}
+.pn-compact .pn-detail{height:100%}
+.pn-compact-list .pn-detail{display:none}
+.pn-right-launcher{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;border-radius:7px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer}
+.pn-right-launcher:hover{background:var(--dsw-alias-bg-secondary);color:var(--dsw-alias-label-primary)}
+.pn-right-launcher:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
+.pn-compact-detail .pn-side{display:none}
+.pn-compact .pn-detail-head{padding:10px 12px 0}
+.pn-compact .pn-detail-title{font-size:16px;line-height:1.35}
+.pn-compact .pn-detail-body{padding:12px 12px 28px}
+.pn-compact .pn-md{font-size:13px;line-height:1.75}
+.pn-compact .pn-compact-back{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.pn-compact .pn-tabs{gap:0;overflow-x:auto;scrollbar-width:none}
+.pn-compact .pn-tab{padding:7px 8px 8px;font-size:11.5px;white-space:nowrap}
 @media (max-width:760px){.pn-body{grid-template-columns:minmax(230px,44%) minmax(0,1fr)}.pn-header{padding:10px 12px}.pn-detail-head{padding:12px 14px 0}.pn-detail-body{padding:12px 14px 32px}}
 `;
       document.head.appendChild(style);
@@ -198,6 +239,7 @@ window.__ModuleLoader__.load({
       arrow: ['M5 12h14', 'M13 6l6 6-6 6'],
       book: ['M4 19.5A2.5 2.5 0 0 1 6.5 17H20', 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'],
       star: ['M12 3.6l2.62 5.64 6.13.84-4.48 4.25 1.13 6.07L12 17.5l-5.4 2.9 1.13-6.07-4.48-4.25 6.13-.84z'],
+      panel: ['M4 4h16v16H4z', 'M15 4v16'],
       tag: ['M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0l-7-7a2 2 0 0 1-.6-1.4V4.5A1.5 1.5 0 0 1 4.5 3h7.7a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8z', 'M7.5 7.5h.01'],
       edit: ['M12 20h9', 'M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z'],
       highlighter: ['M9 11l-4 4v3h3l4-4', 'M12 8l4 4', 'M15 5l4 4', 'M4 22h6', 'M14 3l7 7-3 1-4-4z'],
@@ -257,7 +299,9 @@ window.__ModuleLoader__.load({
       }
       if (!data || data.ok !== true) {
         const message = data?.error?.message || `请求失败（HTTP ${response.status}）`;
-        throw new Error(message);
+        const error = new Error(message);
+        error.code = data?.error?.code || 'error';
+        throw error;
       }
       return data.value;
     }
@@ -825,6 +869,72 @@ window.__ModuleLoader__.load({
       const [models, setModels] = useState(null);
       const [saving, setSaving] = useState(false);
       const [warnings, setWarnings] = useState([]);
+      const [env, setEnv] = useState(null);
+      const wasInstalling = useRef(false);
+
+      useEffect(() => {
+        let alive = true;
+        let timer;
+        const load = async () => {
+          try {
+            const value = await api('envStatus');
+            if (!alive) return;
+            setEnv(value);
+            const installing = Boolean(value.installing);
+            if (wasInstalling.current && !installing) {
+              if (value.ready) {
+                showToast('转写环境已就绪，可以开始转写了', 'ok');
+                try {
+                  const latest = await api('settingsGet');
+                  if (alive) setForm(latest.settings);
+                } catch {
+                  // settings refresh is best effort
+                }
+              } else if (value.lastJob?.status === 'error') {
+                showToast(`环境安装失败：${value.lastJob.error || '未知错误'}`, 'error');
+              }
+            }
+            wasInstalling.current = installing;
+          } catch (error) {
+            if (alive) setEnv({ error: error.message });
+          } finally {
+            if (alive) timer = setTimeout(load, 2500);
+          }
+        };
+        load();
+        return () => {
+          alive = false;
+          clearTimeout(timer);
+        };
+      }, []);
+
+      const startEnv = async () => {
+        try {
+          const job = await api('setupEnv');
+          setEnv((previous) => ({ ...(previous || {}), installing: job, lastJob: job }));
+          wasInstalling.current = true;
+          showToast('开始准备转写环境，首次约 2GB，请保持网络', 'info');
+        } catch (error) {
+          showToast(error.message, 'error');
+        }
+      };
+
+      const cancelEnv = async () => {
+        if (!env?.installing) return;
+        try {
+          await api('cancel', { jobId: env.installing.id });
+          showToast('已取消安装', 'info');
+        } catch (error) {
+          showToast(error.message, 'error');
+        }
+      };
+
+      const envLog = (job) =>
+        String(job?.log || '')
+          .trim()
+          .split('\n')
+          .slice(-14)
+          .join('\n');
 
       useEffect(() => {
         let alive = true;
@@ -902,6 +1012,69 @@ window.__ModuleLoader__.load({
           h(
             'div',
             { className: 'pn-modal-body' },
+            h(
+              'div',
+              { className: 'pn-env' },
+              h(
+                'div',
+                { className: 'pn-env-head' },
+                h('span', {
+                  className: `pn-env-dot ${env?.ready ? 'pn-env-ok' : env?.installing ? 'pn-env-busy' : 'pn-env-warn'}`,
+                }),
+                h('b', null, '转写环境'),
+                h(
+                  'span',
+                  { className: 'pn-env-state' },
+                  !env ? '检查中…' : env.ready ? '已就绪' : env.installing ? '正在安装…' : '未安装',
+                ),
+              ),
+              h(
+                'div',
+                { className: 'pn-env-desc' },
+                env?.ready
+                  ? `${env.source === 'configured' ? '使用已有的 Python 环境' : '使用插件准备的 Python 环境'}，可以直接获取逐字稿。`
+                  : '获取逐字稿需要在本机装一次语音识别环境（FunASR，本地离线，不消耗模型额度）。首次约 2GB、10–20 分钟；点下面的按钮，插件会自动下载并配置，不需要打开终端。',
+              ),
+              env?.ready && env.pythonPath
+                ? h('div', { className: 'pn-env-path mono', title: env.pythonPath }, env.pythonPath)
+                : null,
+              !env?.ready && !env?.installing && env?.canAutoInstall
+                ? h(
+                    'div',
+                    { className: 'pn-env-actions' },
+                    h(
+                      'button',
+                      { type: 'button', className: 'pn-btn pn-btn-primary', onClick: startEnv },
+                      '一键准备转写环境',
+                    ),
+                  )
+                : null,
+              !env?.ready && !env?.installing && env?.canAutoInstall === false
+                ? h('div', { className: 'pn-err' }, '当前系统暂不支持自动安装，请手动准备 Python 3.9+ 环境。')
+                : null,
+              env?.installing
+                ? h(
+                    'div',
+                    { className: 'pn-env-run' },
+                    h('div', { className: 'pn-env-run-head' }, '正在安装，请保持网络连接，别关掉这个面板'),
+                    h('pre', { className: 'pn-env-log' }, envLog(env.installing) || '准备中…'),
+                    h(
+                      'button',
+                      { type: 'button', className: 'pn-btn pn-btn-ghost', onClick: cancelEnv },
+                      '取消安装',
+                    ),
+                  )
+                : null,
+              !env?.ready && !env?.installing && env?.lastJob?.status === 'error'
+                ? h(
+                    'div',
+                    { className: 'pn-env-run' },
+                    h('div', { className: 'pn-env-run-head pn-env-error' }, `上次安装失败：${env.lastJob.error || '未知错误'}`),
+                    h('pre', { className: 'pn-env-log' }, envLog(env.lastJob) || '没有日志'),
+                  )
+                : null,
+              env?.error ? h('div', { className: 'pn-err' }, env.error) : null,
+            ),
             h(
               'div',
               { className: 'pn-field' },
@@ -1379,7 +1552,22 @@ window.__ModuleLoader__.load({
       }
     }
 
-    function Panel() {
+    function RightSidebarLauncher({ onOpen }) {
+      if (!onOpen) return null;
+      return h(
+        'button',
+        {
+          type: 'button',
+          className: 'pn-right-launcher',
+          title: '在右侧栏打开播客笔记',
+          'aria-label': '在右侧栏打开播客笔记',
+          onClick: onOpen,
+        },
+        h(Icon, { name: 'panel', size: 17 }),
+      );
+    }
+
+    function Panel({ compact = false } = {}) {
       const [state, setState] = useState(null);
       const [bootError, setBootError] = useState('');
       const [category, setCategory] = useState('全部');
@@ -1390,6 +1578,7 @@ window.__ModuleLoader__.load({
       const [episodesLoading, setEpisodesLoading] = useState(false);
       const [episodesError, setEpisodesError] = useState('');
       const [selectedGuid, setSelectedGuid] = useState('');
+      const [compactDetail, setCompactDetail] = useState(false);
       const [detail, setDetail] = useState(null);
       const [detailLoading, setDetailLoading] = useState(false);
       const [tab, setTab] = useState('intro');
@@ -1595,6 +1784,7 @@ window.__ModuleLoader__.load({
 
       useEffect(() => {
         if (!feedId || !selectedGuid) return;
+        if (compact && !compactDetail) return;
         const timer = setTimeout(() => {
           api('markViewed', { feedId, guid: selectedGuid })
             .then((result) => {
@@ -1625,7 +1815,7 @@ window.__ModuleLoader__.load({
             .catch(() => {});
         }, 1500);
         return () => clearTimeout(timer);
-      }, [feedId, selectedGuid]);
+      }, [feedId, selectedGuid, compact, compactDetail]);
 
       const running = jobs.some((job) => job.status === 'running');
       useEffect(() => {
@@ -1635,6 +1825,7 @@ window.__ModuleLoader__.load({
             const list = await api('jobs');
             const before = jobsRef.current;
             const finished = list.filter((job) => {
+              if (job.type === 'setup') return false;
               const old = before.find((item) => item.id === job.id);
               return old && old.status === 'running' && job.status !== 'running';
             });
@@ -1845,7 +2036,12 @@ window.__ModuleLoader__.load({
             'info',
           );
         } catch (error) {
-          showToast(error.message, 'error');
+          if (error?.code === 'env-not-ready') {
+            setSettingsOpen(true);
+            showToast('先准备转写环境：设置里点「一键准备转写环境」', 'error');
+          } else {
+            showToast(error.message, 'error');
+          }
         } finally {
           setBusy('');
         }
@@ -2034,7 +2230,7 @@ window.__ModuleLoader__.load({
 
       return h(
         'div',
-        { className: 'pn-root' },
+        { className: `pn-root${compact ? ' pn-compact' : ''}${compact && compactDetail ? ' pn-compact-detail' : ''}${compact && !compactDetail ? ' pn-compact-list' : ''}` },
         h(
           'header',
           { className: 'pn-header' },
@@ -2124,7 +2320,10 @@ window.__ModuleLoader__.load({
                     key: item.id,
                     feed: item,
                     active: item.id === feedId,
-                    onSelect: () => setFeedId(item.id),
+                    onSelect: () => {
+                      setFeedId(item.id);
+                      if (compact) setCompactDetail(false);
+                    },
                     onContextMenu: (event) => openFeedMenu(event, item),
                   }),
                 ),
@@ -2179,7 +2378,10 @@ window.__ModuleLoader__.load({
                           key: episode.guid,
                           episode,
                           active: episode.guid === selectedGuid,
-                          onSelect: () => setSelectedGuid(episode.guid),
+                          onSelect: () => {
+                            setSelectedGuid(episode.guid);
+                            if (compact) setCompactDetail(true);
+                          },
                           onContextMenu: (event) => openEpisodeMenu(event, episode),
                         }),
                       )
@@ -2211,6 +2413,17 @@ window.__ModuleLoader__.load({
                   h(
                     'div',
                     { className: 'pn-detail-head' },
+                    compact
+                      ? h(
+                          'div',
+                          { className: 'pn-compact-back' },
+                          h(
+                            'button',
+                            { type: 'button', className: 'pn-btn pn-btn-sm pn-btn-ghost', onClick: () => setCompactDetail(false) },
+                            '← 单集列表',
+                          ),
+                        )
+                      : null,
                     h(
                       'div',
                       { className: 'pn-detail-eyebrow' },
@@ -2642,7 +2855,7 @@ window.__ModuleLoader__.load({
 
     return {
       name: 'dsh-podcast-notes',
-      inject: ['slots'],
+      inject: ['slots', 'sidebarRightTabs', 'sidebarRight'],
       apply(ctx) {
         ctx.effect(() => {
           ensureStyles();
@@ -2651,7 +2864,50 @@ window.__ModuleLoader__.load({
             if (style) style.remove();
           };
         }, 'dsh-podcast-notes: styles');
-        ctx.slots.inject('main', () => ctx.slots.register({ name: 'main', key: 'podcast-notes' }, Panel));
+        const rightTabs = typeof ctx.get === 'function' ? ctx.get('sidebarRightTabs') : undefined;
+        const rightbar = typeof ctx.get === 'function' ? ctx.get('sidebarRight') : undefined;
+        const openInRightSidebar = rightbar
+          ? () => {
+              try {
+                rightbar.openTab('podcast-notes');
+              } catch (error) {
+                console.warn('[podcast-notes] 无法在右侧栏打开', error);
+              }
+            }
+          : null;
+        if (rightTabs) {
+          ctx.effect(
+            () =>
+              rightTabs.register({
+                id: 'dsh-podcast-notes',
+                kind: 'podcast-notes',
+                title: () => '播客笔记',
+                priority: 'extension',
+                keepMounted: true,
+                guide: [
+                  {
+                    id: 'podcast-notes',
+                    order: 30,
+                    title: () => '播客笔记',
+                    description: () => 'RSS 播客、逐字稿与专家访谈笔记',
+                  },
+                ],
+              }),
+            'dsh-podcast-notes: right tab type',
+          );
+          ctx.slots.inject('sidebar.right.pane.tab', () =>
+            ctx.slots.register(
+              { name: 'sidebar.right.pane.tab', key: 'dsh-podcast-notes' },
+              () => h(Panel, { compact: true }),
+            ),
+          );
+        }
+        ctx.slots.inject('main', () =>
+          ctx.slots.register(
+            { name: 'main', key: 'podcast-notes' },
+            () => h(Panel),
+          ),
+        );
         ctx.slots.inject('sidebar.panellist', () =>
           ctx.slots.register(
             {
@@ -2663,6 +2919,19 @@ window.__ModuleLoader__.load({
             SidebarIcon,
           ),
         );
+        if (rightbar) {
+          ctx.slots.inject('conversation.session.header.utilities', () =>
+            ctx.slots.register(
+              {
+                name: 'conversation.session.header.utilities',
+                id: 'podcast-notes',
+                order: 4,
+                label: () => '播客笔记',
+              },
+              () => h(RightSidebarLauncher, { onOpen: openInRightSidebar }),
+            ),
+          );
+        }
       },
     };
   },

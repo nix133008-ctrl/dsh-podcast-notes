@@ -13,6 +13,7 @@ import {
 } from './lib/store.js';
 import { runTranscription, composeNotesPrompt, readText, transcriptBody } from './lib/transcribe.js';
 import { resolveRoute, generateNotes, writeNotesFile, loadTranscript } from './lib/notes.js';
+import { getEnvStatus, prepareEnvironment } from './lib/env.js';
 
 const ROUTE_PREFIX = '/podcast-notes/api';
 const MAX_BODY = 1024 * 1024;
@@ -138,6 +139,12 @@ function newJob(runtime, type, feed, episode) {
       runtime.jobs.delete(finished.shift().id);
     }
   }
+  return job;
+}
+
+function newSetupJob(runtime) {
+  const job = newJob(runtime, 'setup', { id: '' }, { guid: '', title: '转写环境' });
+  job.title = '转写环境';
   return job;
 }
 
@@ -369,11 +376,78 @@ function buildApi(runtime) {
       return { feedId: feed.id, guid: updated.guid, starred: Boolean(updated.starred) };
     },
 
+    async envStatus() {
+      const value = await getEnvStatus(runtime.config);
+      const setupJobs = [...runtime.jobs.values()]
+        .filter((item) => item.type === 'setup')
+        .sort((a, b) => b.startedAt - a.startedAt);
+      const running = setupJobs.find((item) => item.status === 'running');
+      return {
+        ...value,
+        installing: running ? jobView(running) : null,
+        lastJob: setupJobs[0] ? jobView(setupJobs[0]) : null,
+      };
+    },
+
+    async setupEnv() {
+      const existing = runningJob(runtime, 'setup', '', '');
+      if (existing) return jobView(existing);
+
+      const job = newSetupJob(runtime);
+      const controller = new AbortController();
+      job.controller = controller;
+
+      job.promise = (async () => {
+        try {
+          appendJobLog(job, '开始准备转写环境。首次会下载语音识别依赖，约 2GB，请保持网络连接。\n');
+          const result = await prepareEnvironment({
+            config: runtime.config,
+            signal: controller.signal,
+            onLog: (text) => appendJobLog(job, text),
+          });
+          runtime.config = { ...runtime.config, pythonPath: result.pythonPath };
+          saveConfig(runtime.config);
+          job.status = 'done';
+          job.resultPath = result.pythonPath;
+          job.finishedAt = Date.now();
+          job.updatedAt = job.finishedAt;
+          appendJobLog(job, `\n环境已就绪：${result.pythonPath}\n`);
+          return result;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          job.status = controller.signal.aborted ? 'cancelled' : 'error';
+          job.error = message;
+          job.finishedAt = Date.now();
+          job.updatedAt = job.finishedAt;
+          appendJobLog(job, `\n失败：${message}\n`);
+          if (job.status === 'error') logMessage(runtime, `环境安装失败：${message}`);
+          return undefined;
+        } finally {
+          job.controller = undefined;
+        }
+      })();
+
+      return jobView(job);
+    },
+
     async transcribe(payload) {
       const feed = requireFeed(runtime, payload.feedId);
       const episode = requireEpisode(runtime, feed.id, payload.guid);
       const existing = runningJob(runtime, 'transcript', feed.id, episode.guid);
       if (existing) return jobView(existing);
+
+      const env = await getEnvStatus(runtime.config);
+      if (!env.ready) {
+        throw new ApiError(
+          '转写环境还没准备好：打开设置，点「一键准备转写环境」即可',
+          400,
+          'env-not-ready',
+        );
+      }
+      if (env.pythonPath && env.pythonPath !== runtime.config.pythonPath) {
+        runtime.config = { ...runtime.config, pythonPath: env.pythonPath };
+        saveConfig(runtime.config);
+      }
 
       const job = newJob(runtime, 'transcript', feed, episode);
       const controller = new AbortController();
