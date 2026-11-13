@@ -32,35 +32,29 @@ dsh plugin --profile desktop remove dsh-podcast-notes
 
 **克隆时提示连接 GitHub 超时？** 多是网络波动，重试一次通常就好。一直不行的话：在浏览器里打开仓库主页 → 绿色的 `Code` 按钮 → `Download ZIP`，解压后同样执行 `dsh plugin --profile desktop add ./dsh-podcast-notes`。
 
-### 转写需要额外的 Python 环境
+### 转写需要一份 Python 环境（一次性）
 
-逐字稿转写用的是 [FunASR](https://github.com/modelscope/FunASR)（本地离线识别，**不消耗任何大模型额度**），需要准备一份 Python 环境。
+转写脚本是**随插件自带的**（`vendor/podcast_to_md.py`），专家访谈笔记的生成提示词也内置了一份（`vendor/expert-interview-notes.md`）——克隆下来就能用，不需要再装任何 skill。
 
-**方式一（推荐）**：把 `vita-podcast-download-skill` 克隆到本仓库旁边，插件会自动找到它：
+唯一要准备的是 Python 依赖（[FunASR](https://github.com/modelscope/FunASR) 本地离线识别，**不消耗任何大模型额度**）。在插件目录里建个虚拟环境即可：
 
 ```bash
-git clone https://github.com/nix133008-ctrl/dsh-podcast-notes.git
-git clone <vita-podcast-download-skill 的仓库地址> vita-podcast-download-skill
-cd vita-podcast-download-skill
+cd dsh-podcast-notes
 python3 -m venv .venv
-.venv/bin/pip install funasr modelscope torch feedparser requests tqdm
+.venv/bin/pip install funasr modelscope torch feedparser requests tqdm imageio-ffmpeg
 ```
-
-**方式二**：装成 DSH skill，然后按下面的表改路径。
 
 第一次转写会下载离线识别模型（几百 MB），之后就走本地缓存，不再联网。
 
-装好之后打开插件右上角的齿轮，把这三个路径指过去（一般不用改，插件会自动找）：
+如果你已经在别处装好了这套环境（比如 DSH skill 目录、或本仓库旁边的 `vita-podcast-download-skill`），插件也会自动找到，不用重复装。查找顺序：
 
-| 设置项 | 默认查找位置 |
+| 设置项 | 默认查找位置（从上到下，先用先得的） |
 | --- | --- |
-| Python 解释器 | `./vita-podcast-download-skill/.venv/bin/python` → `~/.claude/skills/vita-podcast-download-skill/.venv/bin/python` → `~/.dsh/skills/...` |
-| 转写脚本 | `./vita-podcast-download-skill/scripts/podcast_to_md.py` → `~/.claude/skills/vita-podcast-download-skill/scripts/podcast_to_md.py` → `~/.dsh/skills/...` |
-| 笔记 skill | `~/.dsh/skills/expert-interview-notes/SKILL.md` → `~/.claude/skills/expert-interview-notes/SKILL.md` |
+| Python 解释器 | 仓库内 `./.venv/bin/python` → `~/.claude/skills/vita-podcast-download-skill/.venv/bin/python` → `~/.dsh/skills/...` → 系统 python3 |
+| 转写脚本 | 仓库内 `vendor/podcast_to_md.py`（自带）→ 旁边的 `vita-podcast-download-skill` → `~/.claude/skills/...` → `~/.dsh/skills/...` |
+| 笔记提示词 | `~/.dsh/skills/expert-interview-notes/SKILL.md` → `~/.claude/skills/...` → 仓库内 `vendor/expert-interview-notes.md`（自带） |
 
-笔记 skill 决定笔记长什么样（结构、写作风格、禁用项）。如果它不在上面任何一个位置，把它的 `SKILL.md` 路径填进设置里就行。
-
-笔记生成用的是 **DeepSeek Harness 当前配置的模型**（默认跟随 DSH 设置），不用额外申请 key。
+都找不到的话，打开插件右上角的齿轮手动指过去。笔记生成用的是 **DeepSeek Harness 当前配置的模型**（默认跟随 DSH 设置），不用额外申请 key。
 
 ## 怎么用
 
@@ -109,8 +103,8 @@ podcast-data/
 ## 几个注意点
 
 - 第一次转写要下载离线识别模型，会慢一些；之后同一台机器会快很多。
-- 转写靠 `vita-podcast-download-skill` 的 Python 环境。默认路径已经填好；如果换电脑，去设置里改成新路径。
-- 报「找不到 Python」或「找不到脚本」时，把上面表格里的两个路径改成你自己的；保存后插件会提示路径是否存在。
+- 转写脚本和笔记提示词都随插件自带（`vendor/`），Python 环境按上面的说明装一次就行。
+- 报「找不到 Python」或「找不到脚本」时，把设置里的两个路径改成你自己的；保存后插件会提示路径是否存在。
 - 有些播客的 RSS 音频是试听、静音或付费片段，转写会提示「没有识别到有效语音」，不会留下空文件。
 - 笔记由当前 DSH 模型生成。插件会自动把「深度思考」调到最低档，避免思考占满输出额度；如果仍提示没有返回内容或被截断，换一个模型，或把「笔记最大 token」调高。
 - 生成的是「专家访谈笔记」，不是行动清单：它保留嘉宾的观点、数字、案例和不确定处，不会硬编下一步任务。
@@ -137,6 +131,7 @@ dsh-podcast-notes/
 ├── lib/notes.js        调用 DSH 模型生成专家访谈笔记
 ├── cordis.patch.yml    插件挂载声明
 ├── icon.svg            左侧栏图标
+├── vendor/             自带的转写脚本与笔记提示词（开箱即用）
 └── docs/panel.jpg      面板截图
 ```
 
