@@ -1,6 +1,6 @@
 # 播客笔记（dsh-podcast-notes）
 
-![播客笔记面板](docs/panel.png)
+![播客笔记面板](docs/panel.jpg)
 
 把「RSS 追更 → 逐字稿 → 专家访谈笔记」收进 DSH 左侧栏的一个插件。
 
@@ -134,7 +134,8 @@ dsh-podcast-notes/
 ├── lib/transcribe.js   调用 Python 脚本转写
 ├── lib/notes.js        调用 DSH 模型生成专家访谈笔记
 ├── cordis.patch.yml    插件挂载声明
-└── icon.svg            左侧栏图标
+├── icon.svg            左侧栏图标
+└── docs/panel.jpg      面板截图
 ```
 
 ## 许可
