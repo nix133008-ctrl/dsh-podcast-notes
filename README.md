@@ -30,6 +30,8 @@ dsh plugin --profile desktop remove dsh-podcast-notes
 >
 > 用图形界面的话，在「插件 / Plugins」里从本地目录安装也行。
 
+**克隆时提示连接 GitHub 超时？** 多是网络波动，重试一次通常就好。一直不行的话：在浏览器里打开仓库主页 → 绿色的 `Code` 按钮 → `Download ZIP`，解压后同样执行 `dsh plugin --profile desktop add ./dsh-podcast-notes`。
+
 ### 转写需要额外的 Python 环境
 
 逐字稿转写用的是 [FunASR](https://github.com/modelscope/FunASR)（本地离线识别，**不消耗任何大模型额度**），需要准备一份 Python 环境。
