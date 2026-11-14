@@ -20,7 +20,24 @@ window.__ModuleLoader__.load({
 .pn-logo{width:36px;height:36px;border-radius:11px;flex:none;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#ff9a6b,#d9482b);box-shadow:0 4px 14px color-mix(in srgb,var(--pn-accent) 30%,transparent)}
 .pn-heading{min-width:0;flex:1}
 .pn-title{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:680;letter-spacing:-.01em;line-height:1.3}
-.pn-sub{color:var(--dsw-alias-label-secondary);font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pn-head-stat{color:var(--dsw-alias-label-tertiary);font-size:10px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-left:2px}
+.pn-head-tabs{display:flex;align-items:center;gap:1px;margin-top:4px;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pn-head-tabs::-webkit-scrollbar{display:none}
+.pn-head-tabs .pn-view-tab{height:24px;padding:0 8px;font-size:11px}
+.pn-head-tabs .pn-view-count{height:14px;min-width:15px;font-size:9px}
+.pn-view-tab{flex:none;display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border:0;border-radius:7px;background:transparent;color:var(--dsw-alias-label-secondary);font-size:11.5px;cursor:pointer;white-space:nowrap}
+.pn-view-tab:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
+.pn-view-tab-on{background:var(--pn-accent-soft);color:var(--pn-accent);font-weight:650}
+.pn-view-count{min-width:16px;height:15px;padding:0 4px;border-radius:99px;background:color-mix(in srgb,var(--dsw-alias-label-tertiary) 16%,transparent);color:var(--dsw-alias-label-secondary);font-size:9px;font-weight:700;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
+.pn-view-tab-on .pn-view-count{background:color-mix(in srgb,var(--pn-accent) 18%,transparent);color:var(--pn-accent)}
+.pn-readall{flex:none;height:24px;padding:0 8px;border-radius:7px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-secondary);font-size:10.5px;cursor:pointer;white-space:nowrap}
+.pn-readall:hover:not(:disabled){border-color:var(--dsw-alias-border-l4);color:var(--dsw-alias-label-primary)}
+.pn-readall:disabled{opacity:.45;cursor:default}
+.pn-side-global .pn-side-top,.pn-side-global .pn-feed-resizer{display:none}
+.pn-global-head{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:9px 10px 0;color:var(--dsw-alias-label-secondary);font-size:11px}
+.pn-global-title{display:flex;align-items:center;gap:6px;min-width:0}
+.pn-global-head b{color:var(--dsw-alias-label-primary);font-size:12px;font-weight:650;white-space:nowrap}
+.pn-ep-feed{max-width:42%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--pn-accent)}
 .pn-head-actions{display:flex;align-items:center;gap:6px;flex:none}
 .pn-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:30px;padding:0 11px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);font-size:12px;cursor:pointer;transition:background .15s,border-color .15s,color .15s;white-space:nowrap}
 .pn-btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l4)}
@@ -34,7 +51,8 @@ window.__ModuleLoader__.load({
 .pn-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(286px,338px) minmax(0,1fr)}
 .pn-side{min-width:0;min-height:0;display:flex;flex-direction:column;border-right:1px solid var(--dsw-alias-border-l2);background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 38%,var(--dsw-alias-bg-layer-1))}
 .pn-side-top{flex:none;padding:10px 10px 6px;display:flex;flex-direction:column;overflow:hidden;border-bottom:1px solid var(--dsw-alias-border-l2)}
-.pn-chips{display:flex;flex-wrap:wrap;gap:5px;padding-bottom:2px;flex:none}
+.pn-chips{display:flex;flex-wrap:nowrap;gap:5px;padding-bottom:2px;flex:none;overflow-x:auto;scrollbar-width:none}
+.pn-chips::-webkit-scrollbar{display:none}
 .pn-feed-resizer{flex:none;height:7px;margin:-1px 0 0;cursor:ns-resize;position:relative;touch-action:none}
 .pn-feed-resizer::before{content:'';position:absolute;left:50%;top:2px;width:40px;height:3px;margin-left:-20px;border-radius:3px;background:color-mix(in srgb,var(--dsw-alias-label-tertiary) 42%,transparent);transition:background .15s,width .15s}
 .pn-feed-resizer:hover::before,.pn-feed-resizer:active::before{width:56px;background:color-mix(in srgb,var(--pn-accent) 55%,var(--dsw-alias-border-l2))}
@@ -188,7 +206,6 @@ window.__ModuleLoader__.load({
 .pn-compact .pn-header{padding:9px 11px;gap:8px}
 .pn-compact .pn-logo{width:30px;height:30px;border-radius:9px}
 .pn-compact .pn-title{font-size:14px}
-.pn-compact .pn-sub{display:none}
 .pn-compact .pn-head-actions{gap:4px}
 .pn-compact .pn-head-actions .pn-btn{height:28px;padding:0 8px;font-size:11px}
 .pn-compact .pn-body{display:block;min-height:0}
@@ -318,6 +335,13 @@ window.__ModuleLoader__.load({
       const minutes = Math.round((value % 3600) / 60);
       if (hours) return `${hours} 小时 ${minutes} 分`;
       return `${Math.max(1, minutes)} 分钟`;
+    }
+
+    function fmtCount(value) {
+      const count = Number(value) || 0;
+      if (count < 1000) return String(count);
+      const k = count / 1000;
+      return `${k >= 10 ? Math.round(k) : Math.round(k * 10) / 10}k`;
     }
 
     function fmtDate(timestamp) {
@@ -820,7 +844,7 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function EpisodeRow({ episode, active, onSelect, onContextMenu }) {
+    function EpisodeRow({ episode, active, onSelect, onContextMenu, showFeed = false }) {
       const unread = !episode.viewedAt;
       return h(
         'button',
@@ -837,6 +861,7 @@ window.__ModuleLoader__.load({
         h(
           'div',
           { className: 'pn-ep-meta' },
+          showFeed && episode.feedTitle ? h('span', { className: 'pn-ep-feed' }, episode.feedTitle) : null,
           episode.pubDate ? h('span', null, fmtDate(episode.pubDate)) : null,
           episode.duration ? h('span', null, fmtDuration(episode.duration)) : null,
           episode.episodeNumber ? h('span', null, `第 ${episode.episodeNumber} 期`) : null,
@@ -1695,6 +1720,11 @@ window.__ModuleLoader__.load({
       const [tab, setTab] = useState('intro');
       const [query, setQuery] = useState('');
       const [filter, setFilter] = useState('all');
+      const [libraryView, setLibraryView] = useState('all');
+      const [libraryEpisodes, setLibraryEpisodes] = useState([]);
+      const [libraryLoading, setLibraryLoading] = useState(false);
+      const [libraryError, setLibraryError] = useState('');
+      const [detailFeedId, setDetailFeedId] = useState('');
       const [jobs, setJobs] = useState([]);
       const [busy, setBusy] = useState('');
       const [refreshing, setRefreshing] = useState(false);
@@ -1830,10 +1860,12 @@ window.__ModuleLoader__.load({
       }, []);
 
       useEffect(() => {
+        if (libraryView !== 'all') return;
         if (!feedId) {
           setFeed(null);
           setEpisodes([]);
           setEpisodesFeedId('');
+          setDetailFeedId('');
           setSelectedGuid('');
           return;
         }
@@ -1846,6 +1878,7 @@ window.__ModuleLoader__.load({
             setFeed(value.feed);
             setEpisodes(value.episodes || []);
             setEpisodesFeedId(feedId);
+            setDetailFeedId(feedId);
             setSelectedGuid((previous) => {
               if ((value.episodes || []).some((episode) => episode.guid === previous)) return previous;
               return value.episodes?.[0]?.guid || '';
@@ -1863,17 +1896,17 @@ window.__ModuleLoader__.load({
         return () => {
           alive = false;
         };
-      }, [feedId, episodeVersion]);
+      }, [feedId, episodeVersion, libraryView]);
 
       useEffect(() => {
-        if (!feedId || !selectedGuid || episodesFeedId !== feedId) {
+        if (!detailFeedId || !selectedGuid) {
           setDetail(null);
           return;
         }
         let alive = true;
         if (detailRef.current?.episode?.guid !== selectedGuid) setDetail(null);
         setDetailLoading(true);
-        api('episode', { feedId, guid: selectedGuid })
+        api('episode', { feedId: detailFeedId, guid: selectedGuid })
           .then((value) => {
             if (!alive) return;
             setDetail(value);
@@ -1891,17 +1924,18 @@ window.__ModuleLoader__.load({
         return () => {
           alive = false;
         };
-      }, [feedId, selectedGuid, detailVersion, episodesFeedId]);
+      }, [detailFeedId, selectedGuid, detailVersion]);
 
       useEffect(() => {
-        if (!feedId || !selectedGuid) return;
+        if (!detailFeedId || !selectedGuid) return;
         if (compact && !compactDetail) return;
         const timer = setTimeout(() => {
-          api('markViewed', { feedId, guid: selectedGuid })
+          api('markViewed', { feedId: detailFeedId, guid: selectedGuid })
             .then((result) => {
               if (!result?.changed) return;
               const stamp = Date.now();
               setEpisodes((list) => list.map((item) => (item.guid === selectedGuid ? { ...item, viewedAt: stamp } : item)));
+              setLibraryEpisodes((list) => list.map((item) => (item.guid === selectedGuid ? { ...item, viewedAt: stamp } : item)));
               setDetail((previous) =>
                 previous?.episode?.guid === selectedGuid
                   ? { ...previous, episode: { ...previous.episode, viewedAt: stamp } }
@@ -1912,7 +1946,7 @@ window.__ModuleLoader__.load({
                 return {
                   ...previous,
                   feeds: previous.feeds.map((item) =>
-                    item.id === feedId
+                    item.id === detailFeedId
                       ? { ...item, stats: { ...item.stats, unreadCount: Math.max(0, Number(item.stats?.unreadCount || 0) - 1) } }
                       : item,
                   ),
@@ -1926,7 +1960,7 @@ window.__ModuleLoader__.load({
             .catch(() => {});
         }, 1500);
         return () => clearTimeout(timer);
-      }, [feedId, selectedGuid, compact, compactDetail]);
+      }, [detailFeedId, selectedGuid, compact, compactDetail]);
 
       const running = jobs.some((job) => job.status === 'running');
       useEffect(() => {
@@ -1986,8 +2020,57 @@ window.__ModuleLoader__.load({
         });
       }, [episodes, query, filter]);
 
-      const selectedEpisode = episodes.find((episode) => episode.guid === selectedGuid) || detail?.episode || null;
-      const episodeJobs = jobs.filter((job) => job.feedId === feedId && job.guid === selectedGuid);
+      useEffect(() => {
+        if (libraryView === 'all') {
+          setLibraryEpisodes([]);
+          setLibraryError('');
+          setLibraryLoading(false);
+          return undefined;
+        }
+        let alive = true;
+        setLibraryLoading(true);
+        setLibraryError('');
+        api('libraryEpisodes', { filter: libraryView })
+          .then((value) => {
+            if (!alive) return;
+            setLibraryEpisodes(Array.isArray(value.episodes) ? value.episodes : []);
+          })
+          .catch((error) => {
+            if (!alive) return;
+            setLibraryError(error.message);
+            setLibraryEpisodes([]);
+          })
+          .finally(() => {
+            if (alive) setLibraryLoading(false);
+          });
+        return () => {
+          alive = false;
+        };
+      }, [libraryView, episodeVersion, detailVersion]);
+
+      const libraryFiltered = useMemo(() => {
+        const needle = query.trim().toLowerCase();
+        return libraryEpisodes.filter((episode) => {
+          if (libraryView === 'unread' && episode.viewedAt) return false;
+          if (libraryView === 'starred' && !episode.starred) return false;
+          if (!needle) return true;
+          const haystack = `${episode.title || ''} ${episode.feedTitle || ''}`.toLowerCase();
+          return haystack.includes(needle);
+        });
+      }, [libraryEpisodes, libraryView, query]);
+
+      const displayEpisodes = libraryView === 'all' ? filteredEpisodes : libraryFiltered;
+      const displayLoading = libraryView === 'all' ? episodesLoading : libraryLoading;
+      const displayError = libraryView === 'all' ? episodesError : libraryError;
+      const activeFeed = feeds.find((item) => item.id === detailFeedId) || feed;
+
+      const selectedEpisode =
+        displayEpisodes.find((episode) => episode.guid === selectedGuid) ||
+        episodes.find((episode) => episode.guid === selectedGuid) ||
+        detail?.episode ||
+        null;
+      const activeFeedId = detailFeedId || feedId;
+      const episodeJobs = jobs.filter((job) => job.feedId === activeFeedId && job.guid === selectedGuid);
       const activeJob = episodeJobs.find((job) => job.status === 'running');
       const lastErrorJob = !activeJob ? episodeJobs.find((job) => job.status === 'error') : null;
       const hasTranscript = Boolean(detail?.transcript);
@@ -2044,13 +2127,31 @@ window.__ModuleLoader__.load({
         }
       };
 
+      const markEverythingRead = async () => {
+        const unread = Number(state?.stats?.unreadCount || 0);
+        if (!unread) {
+          showToast('现在没有未读节目', 'info');
+          return;
+        }
+        if (!window.confirm(`把全部播客的 ${unread} 集更新都标为已读？`)) return;
+        try {
+          await api('markAllViewed');
+          await reload();
+          showToast(`已把 ${unread} 集标为已读`, 'ok');
+        } catch (error) {
+          showToast(error.message, 'error');
+        }
+      };
+
       const toggleStar = async (episode) => {
-        if (!feedId || !episode?.guid) return;
+        const targetFeedId = episode?.feedId || activeFeedId;
+        if (!targetFeedId || !episode?.guid) return;
         const next = !episode.starred;
         try {
-          const result = await api('starEpisode', { feedId, guid: episode.guid, starred: next });
+          const result = await api('starEpisode', { feedId: targetFeedId, guid: episode.guid, starred: next });
           const starred = Boolean(result.starred);
           setEpisodes((list) => list.map((item) => (item.guid === episode.guid ? { ...item, starred } : item)));
+          setLibraryEpisodes((list) => list.map((item) => (item.guid === episode.guid ? { ...item, starred } : item)));
           setDetail((previous) =>
             previous?.episode?.guid === episode.guid ? { ...previous, episode: { ...previous.episode, starred } } : previous,
           );
@@ -2059,7 +2160,7 @@ window.__ModuleLoader__.load({
             return {
               ...previous,
               feeds: previous.feeds.map((item) =>
-                item.id === feedId
+                item.id === targetFeedId
                   ? {
                       ...item,
                       stats: {
@@ -2082,13 +2183,15 @@ window.__ModuleLoader__.load({
       };
 
       const setEpisodeRead = async (episode, viewed) => {
-        if (!feedId || !episode?.guid) return;
+        const targetFeedId = episode?.feedId || activeFeedId;
+        if (!targetFeedId || !episode?.guid) return;
         try {
-          const result = await api('markViewed', { feedId, guid: episode.guid, viewed });
+          const result = await api('markViewed', { feedId: targetFeedId, guid: episode.guid, viewed });
           if (!result?.changed) return;
           const stamp = viewed ? Date.now() : 0;
           const delta = viewed ? -1 : 1;
           setEpisodes((list) => list.map((item) => (item.guid === episode.guid ? { ...item, viewedAt: stamp } : item)));
+          setLibraryEpisodes((list) => list.map((item) => (item.guid === episode.guid ? { ...item, viewedAt: stamp } : item)));
           setDetail((previous) =>
             previous?.episode?.guid === episode.guid ? { ...previous, episode: { ...previous.episode, viewedAt: stamp } } : previous,
           );
@@ -2097,7 +2200,7 @@ window.__ModuleLoader__.load({
             return {
               ...previous,
               feeds: previous.feeds.map((item) =>
-                item.id === feedId
+                item.id === targetFeedId
                   ? { ...item, stats: { ...item.stats, unreadCount: Math.max(0, Number(item.stats?.unreadCount || 0) + delta) } }
                   : item,
               ),
@@ -2135,7 +2238,8 @@ window.__ModuleLoader__.load({
         ]);
 
       const start = async (type) => {
-        if (!feedId || !selectedGuid) return;
+        const targetFeedId = selectedEpisode?.feedId || activeFeedId;
+        if (!targetFeedId || !selectedGuid) return;
         if (type === 'transcribe' && selectedEpisode && looksEnglishEpisode(selectedEpisode)) {
           const proceed = window.confirm(
             '这一期看起来是英文播客。目前转写只支持中文音频，英文会得到乱码。仍然要转写吗？',
@@ -2144,7 +2248,7 @@ window.__ModuleLoader__.load({
         }
         setBusy(type);
         try {
-          const job = await api(type, { feedId, guid: selectedGuid });
+          const job = await api(type, { feedId: targetFeedId, guid: selectedGuid });
           setJobs((previous) => [job, ...previous.filter((item) => item.id !== job.id)]);
           showToast(
             type === 'transcribe'
@@ -2177,7 +2281,7 @@ window.__ModuleLoader__.load({
         const label = type === 'transcript' ? '逐字稿' : '访谈笔记';
         if (!window.confirm(`确定删除这一集的${label}吗？文件会从磁盘删掉。`)) return;
         try {
-          await api('deleteArtifact', { feedId, guid: selectedGuid, type });
+          await api('deleteArtifact', { feedId: activeFeedId, guid: selectedGuid, type });
           showToast(`已删除${label}`, 'ok');
           setDetailVersion((current) => current + 1);
           setEpisodeVersion((current) => current + 1);
@@ -2228,7 +2332,7 @@ window.__ModuleLoader__.load({
         setSavingNotes(true);
         try {
           const result = await api('saveNotes', {
-            feedId: selectedEpisode?.feedId || feedId,
+            feedId: activeFeedId,
             guid: selectedEpisode?.guid || selectedGuid,
             text,
           });
@@ -2272,7 +2376,7 @@ window.__ModuleLoader__.load({
         setSavingNotes(true);
         try {
           await api('saveNotes', {
-            feedId: selectedEpisode?.feedId || feedId,
+            feedId: activeFeedId,
             guid: selectedEpisode?.guid || selectedGuid,
             text: result.text,
           });
@@ -2296,7 +2400,7 @@ window.__ModuleLoader__.load({
         setSavingNotes(true);
         try {
           await api('saveNotes', {
-            feedId: selectedEpisode?.feedId || feedId,
+            feedId: activeFeedId,
             guid: selectedEpisode?.guid || selectedGuid,
             text: updated,
           });
@@ -2396,11 +2500,47 @@ window.__ModuleLoader__.load({
                     stats.unreadCount > 99 ? '99+' : String(stats.unreadCount),
                   )
                 : null,
+              h(
+                'span',
+                {
+                  className: 'pn-head-stat',
+                  title: `${feeds.length} 个播客 · ${stats.totalEpisodes || 0} 集 · ${stats.transcriptCount || 0} 份逐字稿 · ${stats.notesCount || 0} 篇笔记`,
+                },
+                `${stats.totalEpisodes || 0} 集`,
+              ),
             ),
             h(
               'div',
-              { className: 'pn-sub' },
-              `${feeds.length} 个播客 · ${stats.totalEpisodes || 0} 集 · ${stats.transcriptCount || 0} 份逐字稿 · ${stats.notesCount || 0} 篇笔记`,
+              { className: 'pn-head-tabs' },
+              [
+                ['all', '全部', stats.totalEpisodes || 0],
+                ['unread', '未读', stats.unreadCount || 0],
+                ['starred', '收藏', stats.starredCount || 0],
+              ].map(([value, label, count]) =>
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    key: value,
+                    className: `pn-view-tab${libraryView === value ? ' pn-view-tab-on' : ''}`,
+                    onClick: () => {
+                      setLibraryView(value);
+                      setQuery('');
+                      setCompactDetail(false);
+                      if (value === 'all' && episodes[0]) {
+                        setDetailFeedId(feedId);
+                        setSelectedGuid(episodes[0].guid);
+                      } else {
+                        setSelectedGuid('');
+                        setDetail(null);
+                        setDetailFeedId('');
+                      }
+                    },
+                  },
+                  label,
+                  h('span', { className: 'pn-view-count' }, fmtCount(count)),
+                ),
+              ),
             ),
           ),
           h(
@@ -2430,7 +2570,7 @@ window.__ModuleLoader__.load({
           { className: 'pn-body' },
           h(
             'aside',
-            { className: 'pn-side' },
+            { className: `pn-side${libraryView !== 'all' ? ' pn-side-global' : ''}` },
             h(
               'div',
               { className: 'pn-side-top', style: { height: feedPaneHeight } },
@@ -2469,6 +2609,10 @@ window.__ModuleLoader__.load({
                     active: item.id === feedId,
                     onSelect: () => {
                       setFeedId(item.id);
+                      setDetailFeedId(item.id);
+                      if (item.id === feedId && !selectedGuid) {
+                        setSelectedGuid(episodes[0]?.guid || '');
+                      }
                       if (compact) setCompactDetail(false);
                     },
                     onContextMenu: (event) => openFeedMenu(event, item),
@@ -2487,6 +2631,30 @@ window.__ModuleLoader__.load({
               onPointerDown: startFeedResize,
               onDoubleClick: () => setFeedPaneHeight(196),
             }),
+            libraryView !== 'all'
+              ? h(
+                  'div',
+                  { className: 'pn-global-head' },
+                  h(
+                    'div',
+                    { className: 'pn-global-title' },
+                    h('b', null, libraryView === 'unread' ? '所有未读' : '所有收藏'),
+                    h('span', null, libraryView === 'unread' ? '按更新时间排序' : '按收藏顺序保留'),
+                  ),
+                  libraryView === 'unread' && stats.unreadCount
+                    ? h(
+                        'button',
+                        {
+                          type: 'button',
+                          className: 'pn-readall',
+                          onClick: markEverythingRead,
+                          title: '把全部播客的单集都标为已读',
+                        },
+                        '全部已读',
+                      )
+                    : null,
+                )
+              : null,
             h(
               'div',
               { className: 'pn-list-tools' },
@@ -2501,53 +2669,69 @@ window.__ModuleLoader__.load({
                   spellCheck: false,
                 }),
               ),
-              h(
-                'select',
-                { className: 'pn-filter', value: filter, onChange: (event) => setFilter(event.target.value), title: '筛选单集' },
-                h('option', { value: 'all' }, '全部'),
-                h('option', { value: 'unread' }, '未读'),
-                h('option', { value: 'starred' }, '星标'),
-                h('option', { value: 'none' }, '未处理'),
-                h('option', { value: 'transcript' }, '有逐字稿'),
-                h('option', { value: 'notes' }, '有笔记'),
-              ),
+              libraryView === 'all'
+                ? h(
+                    'select',
+                    { className: 'pn-filter', value: filter, onChange: (event) => setFilter(event.target.value), title: '筛选单集' },
+                    h('option', { value: 'all' }, '全部'),
+                    h('option', { value: 'unread' }, '未读'),
+                    h('option', { value: 'starred' }, '星标'),
+                    h('option', { value: 'none' }, '未处理'),
+                    h('option', { value: 'transcript' }, '有逐字稿'),
+                    h('option', { value: 'notes' }, '有笔记'),
+                  )
+                : null,
             ),
             h(
               'div',
               { className: 'pn-episodes' },
-              episodesLoading
+              displayLoading
                 ? h('div', { className: 'pn-loading' }, h('span', { className: 'pn-spinner' }), '正在读取节目…')
-                : episodesError
-                  ? h(Empty, { icon: 'alert', title: '读取节目失败', text: episodesError })
-                  : filteredEpisodes.length
-                    ? filteredEpisodes.map((episode) =>
+                : displayError
+                  ? h(Empty, { icon: 'alert', title: '读取节目失败', text: displayError })
+                  : displayEpisodes.length
+                    ? displayEpisodes.map((episode) =>
                         h(EpisodeRow, {
-                          key: episode.guid,
+                          key: `${episode.feedId || feedId}:${episode.guid}`,
                           episode,
                           active: episode.guid === selectedGuid,
+                          showFeed: libraryView !== 'all',
                           onSelect: () => {
+                            setDetailFeedId(episode.feedId || feedId);
                             setSelectedGuid(episode.guid);
                             if (compact) setCompactDetail(true);
                           },
                           onContextMenu: (event) => openEpisodeMenu(event, episode),
                         }),
                       )
-                    : h(Empty, {
-                        icon: feed ? 'rss' : 'mic',
-                        title: query || filter !== 'all' ? '没有匹配的单集' : '这个播客还没有节目',
-                        text:
-                          query || filter !== 'all'
-                            ? '换个关键词或筛选条件试试。'
-                            : '刷新一下，或者检查 RSS 是否可以访问。',
-                        children:
-                          !query && filter === 'all' && feed
-                            ? h(
-                                'button',
-                                { type: 'button', className: 'pn-btn pn-btn-sm', onClick: () => refreshAll(feed.id), disabled: refreshing },
-                                '刷新这个播客',
-                              )
-                            : null,
-                      }),
+                    : libraryView === 'unread'
+                      ? h(Empty, {
+                          icon: 'check',
+                          title: query ? '没有匹配的未读单集' : '未读已经清空',
+                          text: query ? '换个关键词试试。' : '所有播客都读完了，等下一次更新。',
+                        })
+                      : libraryView === 'starred'
+                        ? h(Empty, {
+                            icon: 'star',
+                            title: query ? '没有匹配的收藏' : '还没有收藏',
+                            text: query ? '换个关键词试试。' : '在单集上右键，或点详情里的星标，收藏就会出现在这里。',
+                          })
+                        : h(Empty, {
+                            icon: feed ? 'rss' : 'mic',
+                            title: query || filter !== 'all' ? '没有匹配的单集' : '这个播客还没有节目',
+                            text:
+                              query || filter !== 'all'
+                                ? '换个关键词或筛选条件试试。'
+                                : '刷新一下，或者检查 RSS 是否可以访问。',
+                            children:
+                              !query && filter === 'all' && feed
+                                ? h(
+                                    'button',
+                                    { type: 'button', className: 'pn-btn pn-btn-sm', onClick: () => refreshAll(feed.id), disabled: refreshing },
+                                    '刷新这个播客',
+                                  )
+                                : null,
+                          }),
             ),
           ),
           h(
@@ -2574,7 +2758,7 @@ window.__ModuleLoader__.load({
                     h(
                       'div',
                       { className: 'pn-detail-eyebrow' },
-                      feed?.title || '',
+                      activeFeed?.title || selectedEpisode.feedTitle || '',
                       selectedEpisode.pubDate ? h('span', null, '·') : null,
                       selectedEpisode.pubDate ? h('span', null, fmtDate(selectedEpisode.pubDate)) : null,
                       selectedEpisode.duration ? h('span', null, '·') : null,
@@ -2959,8 +3143,8 @@ window.__ModuleLoader__.load({
                   { className: 'pn-detail-body', style: { display: 'grid', placeItems: 'center' } },
                   h(Empty, {
                     icon: 'mic',
-                    title: feed ? '选择一期节目' : '还没有播客',
-                    text: feed ? '从左边挑一集，获取逐字稿或专家访谈笔记。' : '添加一个 RSS，或者刷新默认订阅。',
+                    title: activeFeed ? '选择一期节目' : '还没有播客',
+                    text: activeFeed ? '从左边挑一集，获取逐字稿或专家访谈笔记。' : '添加一个 RSS，或者刷新默认订阅。',
                   }),
                 ),
           ),

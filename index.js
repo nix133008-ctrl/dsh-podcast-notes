@@ -245,6 +245,47 @@ function buildApi(runtime) {
       };
     },
 
+    async libraryEpisodes(payload) {
+      const filter = payload?.filter === 'unread' || payload?.filter === 'starred' ? payload.filter : 'all';
+      const store = requireStore(runtime);
+      const library = store.getLibrary();
+      const items = [];
+      for (const feed of library.feeds) {
+        const feedTitle = feed.title || feed.url;
+        const category = feedCategory(feed);
+        for (const episode of store.getEpisodes(feed.id)) {
+          if (filter === 'unread' && episode.viewedAt) continue;
+          if (filter === 'starred' && !episode.starred) continue;
+          items.push({
+            feedId: feed.id,
+            feedTitle,
+            category,
+            guid: episode.guid,
+            title: episode.title,
+            link: episode.link,
+            pubDate: episode.pubDate,
+            duration: episode.duration,
+            episodeNumber: episode.episodeNumber,
+            image: episode.image || feed.image,
+            transcriptPath: episode.transcriptPath,
+            notesPath: episode.notesPath,
+            transcriptChars: episode.transcriptChars,
+            notesChars: episode.notesChars,
+            viewedAt: episode.viewedAt,
+            starred: Boolean(episode.starred),
+          });
+        }
+      }
+      items.sort((a, b) => (b.pubDate || 0) - (a.pubDate || 0));
+      const stats = store.globalStats();
+      return {
+        episodes: items,
+        filter,
+        unreadCount: stats.unreadCount,
+        starredCount: stats.starredCount,
+      };
+    },
+
     async episode(payload) {
       const feed = requireFeed(runtime, payload.feedId);
       const episode = requireEpisode(runtime, feed.id, payload.guid);
@@ -363,6 +404,12 @@ function buildApi(runtime) {
       const feed = requireFeed(runtime, payload.feedId);
       requireStore(runtime).removeFeed(feed.id);
       return { removed: feed.id };
+    },
+
+    async markAllViewed() {
+      const store = requireStore(runtime);
+      const result = store.markAllViewed();
+      return { changed: result.changed, unreadCount: 0 };
     },
 
     async markViewed(payload) {
