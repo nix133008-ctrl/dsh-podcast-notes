@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Podcast → Markdown 逐字稿(带时间戳)。
 
-支持两种入口:
+支持四种入口:
   1. RSS URL — 解析整档播客,按 --range 选期,逐期转写
-  2. 小宇宙单期 URL(xiaoyuzhoufm.com/episode/...) — 抓页面取音频直链
+  2. RSS URL + --episode-guid — 只转写 RSS 里指定 GUID 的一期(非小宇宙源用)
+  3. 小宇宙单期 URL(xiaoyuzhoufm.com/episode/...) — 抓页面取音频直链
+  4. Transistor 单集分享页(share.transistor.fm/s/...) — 抓页面取音频直链
 
 默认只产出 markdown 文件,音频不落地。--keep-audio 才把原始音频存到 audio/。
 
@@ -15,6 +17,7 @@
 from __future__ import annotations
 
 import argparse
+import errno
 import json
 import os
 import re
@@ -23,6 +26,10 @@ import tempfile
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
+
+# macOS 的 errno 没有 EREMOTEIO，modelscope 下载模型时会直接 AttributeError。
+if not hasattr(errno, "EREMOTEIO"):
+    errno.EREMOTEIO = errno.EIO
 
 AUDIO_EXTS = (".mp3", ".m4a", ".aac", ".wav", ".flac", ".ogg")
 DEFAULT_OUTPUT = str(Path.home() / "podcast_downloads")
@@ -114,9 +121,11 @@ DEVICE_RTF_NOTE = {
 
 
 def detect_input(arg: str) -> tuple[str, str]:
-    """判断输入类型。返回 (kind, url);kind ∈ {'rss', 'xiaoyuzhou_episode'}。"""
+    """判断输入类型。返回 (kind, url);kind ∈ {'rss', 'xiaoyuzhou_episode', 'share_episode'}。"""
     if "xiaoyuzhoufm.com/episode/" in arg:
         return "xiaoyuzhou_episode", arg
+    if "share.transistor.fm/" in arg or "transistor.fm/s/" in arg:
+        return "share_episode", arg
     return "rss", arg
 
 
@@ -153,12 +162,52 @@ def fetch_rss_entries(rss_url: str) -> tuple[str, list[dict]]:
             print(f"[跳过] 没有音频链接:{title}")
             continue
         out.append({
+            "guid": entry.get("id") or entry.get("guid") or entry.get("link", ""),
             "title": title,
             "audio_url": audio_url,
             "episode_url": entry.get("link", ""),
             "published": entry.get("published", entry.get("updated", "")),
         })
     return show_name, out
+
+
+def fetch_share_episode(episode_url: str) -> dict:
+    """抓 Transistor 等单集分享页,从 og/twitter meta 取音频直链。"""
+    import requests
+    headers = {"User-Agent": "Mozilla/5.0 podcast-transcriber/1.0"}
+    r = requests.get(episode_url, headers=headers, timeout=30)
+    r.raise_for_status()
+    html = r.text
+    audio_url = None
+    for pattern in (
+        r'<meta[^>]+(?:property|name)=["\'](?:og:audio|twitter:player:stream)["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\'](?:og:audio|twitter:player:stream)["\']',
+    ):
+        m = re.search(pattern, html, re.I)
+        if m:
+            audio_url = m.group(1)
+            break
+    if not audio_url:
+        raise SystemExit("无法从该分享页提取音频链接,请检查 URL 是否正确。")
+    title = None
+    for pattern in (
+        r'<meta[^>]+(?:property|name)=["\'](?:og:title|twitter:title)["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\'](?:og:title|twitter:title)["\']',
+    ):
+        m = re.search(pattern, html, re.I)
+        if m:
+            title = m.group(1)
+            break
+    if not title:
+        m = re.search(r"<title[^>]*>(.*?)</title>", html, re.S | re.I)
+        title = m.group(1).strip() if m else "未命名单集"
+    return {
+        "show_name": "未知节目",
+        "title": title,
+        "audio_url": audio_url,
+        "episode_url": episode_url,
+        "published": "",
+    }
 
 
 def fetch_xiaoyuzhou_episode(episode_url: str) -> dict:
@@ -463,6 +512,50 @@ def process_one(
     return md_path
 
 
+def resolve_local_episode(url: str) -> dict | None:
+    """兼容旧版插件：旧版把单集网页链接直接传进来（例如喜马拉雅
+    /sound/123），这里从插件数据目录的 library.json + episodes/*.json
+    反查这一集的音频直链，避免把网页当 RSS 解析。
+
+    新版本插件会直接传 RSS + GUID；这个兜底只在输入是网页链接时生效。
+    """
+    root = Path.cwd()
+    library_path = root / "library.json"
+    if not library_path.exists():
+        return None
+    try:
+        library = json.loads(library_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    target = url.split("?")[0].rstrip("/")
+    for feed in library.get("feeds", []):
+        feed_id = feed.get("id")
+        if not feed_id:
+            continue
+        episodes_path = root / "episodes" / f"{feed_id}.json"
+        if not episodes_path.exists():
+            continue
+        try:
+            episodes = json.loads(episodes_path.read_text(encoding="utf-8")).get("episodes", [])
+        except Exception:
+            continue
+        for ep in episodes:
+            link = str(ep.get("link") or "").split("?")[0].rstrip("/")
+            guid = str(ep.get("guid") or "")
+            if link == target or guid == target or guid == url:
+                audio_url = ep.get("audioUrl")
+                if not audio_url:
+                    continue
+                return {
+                    "show_name": feed.get("title") or "未知节目",
+                    "title": ep.get("title") or "未知单集",
+                    "audio_url": audio_url,
+                    "episode_url": ep.get("link") or url,
+                    "published": ep.get("published") or "",
+                }
+    return None
+
+
 def main() -> None:
     p = argparse.ArgumentParser(
         description="把播客 RSS 或小宇宙单期链接转成带时间戳的 Markdown 逐字稿。"
@@ -472,6 +565,7 @@ def main() -> None:
         help="RSS URL 或小宇宙单期链接(https://www.xiaoyuzhoufm.com/episode/...)",
     )
     p.add_argument("--range", help="RSS 模式下选期范围,例如 1-50")
+    p.add_argument("--episode-guid", help="RSS 模式下只处理指定 GUID 的一期(非小宇宙源)")
     p.add_argument("--output", default=DEFAULT_OUTPUT, help="输出根目录")
     p.add_argument(
         "--keep-audio",
@@ -492,12 +586,35 @@ def main() -> None:
     model = load_model(device)
 
     if kind == "rss":
+        local = resolve_local_episode(url)
+        if local:
+            print(f"[节目] {local['show_name']} — {local['title']}（本地数据反查）")
+            process_one(
+                audio_url=local["audio_url"],
+                title=local["title"],
+                show_name=local["show_name"],
+                episode_url=local["episode_url"],
+                published=local["published"],
+                index=1,
+                out_root=out_root,
+                model=model,
+                keep_audio=args.keep_audio,
+            )
+            return
         show_name, entries = fetch_rss_entries(url)
         if args.range:
             start, end = map(int, args.range.split("-"))
             entries = entries[start - 1: end]
+        if args.episode_guid:
+            wanted = args.episode_guid.strip()
+            entries = [
+                e for e in entries
+                if e.get("guid") == wanted
+                or str(e.get("guid", "")).endswith("/" + wanted)
+                or str(e.get("guid", "")).endswith(":" + wanted)
+            ]
         if not entries:
-            raise SystemExit("范围内没有可用节目。")
+            raise SystemExit("RSS 里找不到指定 GUID 的节目。")
         print(f"[节目] {show_name},共 {len(entries)} 期")
         for i, e in enumerate(entries, start=1):
             process_one(
@@ -511,6 +628,20 @@ def main() -> None:
                 model=model,
                 keep_audio=args.keep_audio,
             )
+    elif kind == "share_episode":
+        meta = fetch_share_episode(url)
+        print(f"[节目] {meta['show_name']} — {meta['title']}")
+        process_one(
+            audio_url=meta["audio_url"],
+            title=meta["title"],
+            show_name=meta["show_name"],
+            episode_url=meta["episode_url"],
+            published=meta.get("published", ""),
+            index=1,
+            out_root=out_root,
+            model=model,
+            keep_audio=args.keep_audio,
+        )
     elif kind == "xiaoyuzhou_episode":
         meta = fetch_xiaoyuzhou_episode(url)
         print(f"[节目] {meta['show_name']} — {meta['title']}")

@@ -166,6 +166,20 @@ function episodeUrl(episode) {
   throw new ApiError('这一集没有可用的单集链接', 400, 'missing-url');
 }
 
+/**
+ * 转写入口：小宇宙单集直接抓页面；其他 RSS 源（Transistor / Podwise 等）
+ * 用 RSS + episode GUID 选集，避免把 share 页面当成 RSS 解析。
+ */
+function transcriptionSource(feed, episode) {
+  if (episode.link && /xiaoyuzhoufm\.com\/episode\//i.test(episode.link)) {
+    return { url: episode.link, guid: '' };
+  }
+  if (feed?.url && episode.guid) {
+    return { url: feed.url, guid: episode.guid };
+  }
+  return { url: episodeUrl(episode), guid: '' };
+}
+
 async function readJsonBody(req) {
   const chunks = [];
   let total = 0;
@@ -452,7 +466,7 @@ function buildApi(runtime) {
       const job = newJob(runtime, 'transcript', feed, episode);
       const controller = new AbortController();
       job.controller = controller;
-      const url = episodeUrl(episode);
+      const source = transcriptionSource(feed, episode);
       const outputRoot = requireStore(runtime).transcriptRoot(feed.id);
 
       job.promise = (async () => {
@@ -461,7 +475,8 @@ function buildApi(runtime) {
           const result = await runTranscription({
             pythonPath: runtime.config.pythonPath,
             scriptPath: runtime.config.scriptPath,
-            episodeUrl: url,
+            episodeUrl: source.url,
+            episodeGuid: source.guid,
             outputRoot,
             cwd: runtime.config.dataDir,
             signal: controller.signal,

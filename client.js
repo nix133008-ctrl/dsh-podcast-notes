@@ -92,6 +92,8 @@ window.__ModuleLoader__.load({
 
 .pn-detail-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:var(--dsw-alias-label-secondary);font-size:11px;margin-top:7px}
 .pn-detail-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:11px 0 10px}
+.pn-lang-hint{font-size:10.5px;color:var(--dsw-alias-label-tertiary);white-space:nowrap}
+.pn-lang-hint b{color:var(--dsw-alias-label-secondary);font-weight:600}
 .pn-tabs{display:flex;align-items:center;gap:2px;padding:0;margin-top:2px}
 .pn-tab{position:relative;border:0;background:transparent;color:var(--dsw-alias-label-secondary);font-size:12px;padding:8px 10px 9px;cursor:pointer;border-radius:6px 6px 0 0}
 .pn-tab:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover)}
@@ -469,6 +471,15 @@ window.__ModuleLoader__.load({
           window.prompt('浏览器拦截了新窗口，请复制链接打开', url);
         }
       }
+    }
+
+    // 当前 FunASR 只加载了中文 Paraformer；英文节目转出来会是音译乱码。
+    // 标题/简介以拉丁字母为主时，在开始转写前明确提醒一次。
+    function looksEnglishEpisode(episode) {
+      const text = `${episode?.title || ''} ${episode?.description || ''}`.slice(0, 800);
+      const cjk = (text.match(/[\u3400-\u9fff]/g) || []).length;
+      const latin = (text.match(/[A-Za-z]/g) || []).length;
+      return latin >= 60 && cjk < latin * 0.15;
     }
 
     // Produces a syntax-free copy of the Markdown plus an index map that maps
@@ -2125,6 +2136,12 @@ window.__ModuleLoader__.load({
 
       const start = async (type) => {
         if (!feedId || !selectedGuid) return;
+        if (type === 'transcribe' && selectedEpisode && looksEnglishEpisode(selectedEpisode)) {
+          const proceed = window.confirm(
+            '这一期看起来是英文播客。目前转写只支持中文音频，英文会得到乱码。仍然要转写吗？',
+          );
+          if (!proceed) return;
+        }
         setBusy(type);
         try {
           const job = await api(type, { feedId, guid: selectedGuid });
@@ -2647,6 +2664,9 @@ window.__ModuleLoader__.load({
                               '重新转写',
                             ),
                           ),
+                      !hasTranscript
+                        ? h('span', { className: 'pn-lang-hint' }, h('b', null, '仅支持中文'), '音频')
+                        : null,
                       hasTranscript
                         ? h(
                             'button',
@@ -2893,7 +2913,7 @@ window.__ModuleLoader__.load({
                                     h(
                                       'p',
                                       null,
-                                      '调用 vita-podcast-download-skill 下载音频并转写，结果按节目名归档为带时间戳的 Markdown。音频默认不保留。',
+                                      '调用 vita-podcast-download-skill 下载音频并转写，结果按节目名归档为带时间戳的 Markdown。音频默认不保留。目前只支持中文音频；英文播客会得到乱码。',
                                     ),
                                     h(
                                       'button',
