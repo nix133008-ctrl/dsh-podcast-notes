@@ -41,6 +41,9 @@ for name in ("funasr", "modelscope", "torch", "feedparser", "requests", "tqdm", 
         importlib.import_module(name)
     except Exception:
         missing.append(name)
+# FunASR needs one fbank backend: torchaudio or kaldi-native-fbank.
+if importlib.util.find_spec("torchaudio") is None and importlib.util.find_spec("kaldi_native_fbank") is None:
+    missing.append("fbank 后端（torchaudio 或 kaldi-native-fbank）")
 if missing:
     print("缺少依赖：" + ", ".join(missing))
     raise SystemExit(1)
@@ -85,7 +88,7 @@ install_deps() {
 if [ -n "$MIRROR" ]; then
   echo "使用镜像：$MIRROR"
 fi
-install_deps funasr modelscope torch feedparser requests tqdm imageio-ffmpeg
+install_deps funasr modelscope torch kaldi-native-fbank feedparser requests tqdm imageio-ffmpeg
 
 check_deps
 

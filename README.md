@@ -43,10 +43,12 @@ dsh plugin --profile desktop remove dsh-podcast-notes
 插件会自动完成，不需要打开终端：
 
 1. 查找本机 Python 3.9+；如果找不到，自动下载一份独立的 Python（约 27MB）；
-2. 在 `~/.dsh/podcast-notes/runtime/` 建独立环境，安装 `funasr`、`torch` 等依赖（约 2GB）；
+2. 在 `~/.dsh/podcast-notes/runtime/` 建独立环境，安装 `funasr`、`torch`、`kaldi-native-fbank` 等依赖（约 2GB）；
 3. 装完自检，并把设置里的「Python 解释器」自动指过去。
 
 首次大约 10–20 分钟，请保持网络连接；默认源失败会自动换清华镜像再试一次。装好之后，获取逐字稿和生成笔记都不再需要终端，也不需要额外申请 key。
+
+> FunASR 提取特征还需要一个 fbank 后端。一键安装会顺带装 `kaldi-native-fbank`（约 0.4MB），不需要再单独装 `torchaudio`；如果手动装依赖，记得把它一起装上。
 
 如果自动安装失败，日志会显示在设置面板里。也可以手动装（和按钮等价）：
 
