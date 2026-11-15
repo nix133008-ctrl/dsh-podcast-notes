@@ -1,6 +1,6 @@
 # 播客笔记（dsh-podcast-notes）
 
-![播客笔记面板](docs/panel.jpg)
+![播客笔记面板：全部/未读/收藏分栏、专家访谈笔记与高亮](docs/panel.jpg)
 
 把「RSS 追更 → 逐字稿 → 专家访谈笔记」收进 DSH 侧栏的一个插件。
 
