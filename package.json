@@ -47,10 +47,10 @@
     "transcript",
     "notes"
   ],
-  "homepage": "https://github.com/nix133008-ctrl/dsh-podcast-notes#readme",
+  "homepage": "https://github.com/weiyudubai/dsh-podcast-notes#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nix133008-ctrl/dsh-podcast-notes.git"
+    "url": "git+https://github.com/weiyudubai/dsh-podcast-notes.git"
   },
-  "author": "nix133008-ctrl"
+  "author": "weiyudubai"
 }

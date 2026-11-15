@@ -14,7 +14,7 @@
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/nix133008-ctrl/dsh-podcast-notes.git
+git clone https://github.com/weiyudubai/dsh-podcast-notes.git
 
 # 2. 装进你的 DSH profile（profile 名字按你自己的来，桌面版一般是 desktop）
 dsh plugin --profile desktop add ./dsh-podcast-notes
