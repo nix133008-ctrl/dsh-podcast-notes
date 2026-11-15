@@ -2104,6 +2104,9 @@ window.__ModuleLoader__.load({
           setState(value);
           if (!value.feeds?.some((item) => item.id === feedId)) {
             setFeedId(value.feeds?.[0]?.id || '');
+            setDetailFeedId('');
+            setSelectedGuid('');
+            setDetail(null);
           }
           setEpisodeVersion((current) => current + 1);
           setDetailVersion((current) => current + 1);
@@ -2549,7 +2552,7 @@ window.__ModuleLoader__.load({
                       setLibraryView(value);
                       setQuery('');
                       setCompactDetail(false);
-                      if (value === 'all' && episodes[0]) {
+                      if (value === 'all' && episodes[0] && episodesFeedId === feedId) {
                         setDetailFeedId(feedId);
                         setSelectedGuid(episodes[0].guid);
                       } else {
@@ -2630,9 +2633,15 @@ window.__ModuleLoader__.load({
                     feed: item,
                     active: item.id === feedId,
                     onSelect: () => {
-                      setFeedId(item.id);
-                      setDetailFeedId(item.id);
-                      if (item.id === feedId && !selectedGuid) {
+                      if (item.id !== feedId) {
+                        // 切播客时先清空详情，等新播客的单集列表回来再选中第一期；
+                        // 否则 detailFeedId 已变、selectedGuid 还是上一档的，会打出「找不到这一集」。
+                        setFeedId(item.id);
+                        setDetailFeedId('');
+                        setSelectedGuid('');
+                        setDetail(null);
+                        setTab('intro');
+                      } else if (!selectedGuid) {
                         setSelectedGuid(episodes[0]?.guid || '');
                       }
                       if (compact) setCompactDetail(false);
