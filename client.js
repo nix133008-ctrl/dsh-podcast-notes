@@ -3097,7 +3097,7 @@ window.__ModuleLoader__.load({
                                     h(
                                       'p',
                                       null,
-                                      '调用 vita-podcast-download-skill 下载音频并转写，结果按节目名归档为带时间戳的 Markdown。音频默认不保留。目前只支持中文音频；英文播客会得到乱码。',
+                                      '调用插件内置的本地转写脚本下载音频并转写，结果按节目名归档为带时间戳的 Markdown。音频默认不保留。目前只支持中文音频；英文播客会得到乱码。',
                                     ),
                                     h(
                                       'button',

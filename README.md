@@ -66,15 +66,15 @@ bash scripts/setup-env.sh --check
 
 第一次转写会下载离线识别模型（几百 MB），之后就走本地缓存，不再联网。
 
-如果你已经在别处装好了这套环境（比如 DSH skill 目录、或本仓库旁边的 `vita-podcast-download-skill`），插件也会自动找到，不用重复装。查找顺序：
+新用户不需要装任何 skill：转写脚本和笔记提示词都已经放在仓库的 `vendor/` 里。默认只使用 DSH 自己的 runtime；只有你手动跑过 `scripts/setup-env.sh`，才会用仓库里的 `.venv`。
 
-| 设置项 | 默认查找位置（从上到下，先用先得的） |
+| 设置项 | 默认位置 |
 | --- | --- |
-| Python 解释器 | `~/.dsh/podcast-notes/runtime/venv/bin/python`（一键安装的位置）→ 仓库内 `./.venv/bin/python` → `~/.claude/skills/vita-podcast-download-skill/.venv/bin/python` → `~/.dsh/skills/...` → 系统 python3 |
-| 转写脚本 | 仓库内 `vendor/podcast_to_md.py`（自带）→ 旁边的 `vita-podcast-download-skill` → `~/.claude/skills/...` → `~/.dsh/skills/...` |
-| 笔记提示词 | `~/.dsh/skills/expert-interview-notes/SKILL.md` → `~/.claude/skills/...` → 仓库内 `vendor/expert-interview-notes.md`（自带） |
+| Python 解释器 | `~/.dsh/podcast-notes/runtime/venv/bin/python`（一键安装；没有装时会显示「未安装」）→ 仓库内 `./.venv/bin/python`（手动脚本安装） |
+| 转写脚本 | 仓库内 `vendor/podcast_to_md.py`（自带，不用额外安装） |
+| 笔记提示词 | 仓库内 `vendor/expert-interview-notes.md`（自带，不用额外安装） |
 
-都找不到的话，打开插件右上角的齿轮手动指过去。笔记生成用的是 **DeepSeek Harness 当前配置的模型**（默认跟随 DSH 设置），不用额外申请 key。
+如果两个 Python 都没有，打开插件右上角齿轮点「一键准备转写环境」；也可以手动跑 `bash scripts/setup-env.sh`。笔记生成用的是 **DeepSeek Harness 当前配置的模型**（默认跟随 DSH 设置），不用额外申请 key。
 
 ## 怎么用
 
@@ -141,7 +141,7 @@ RSS 地址通常长这样：
 默认数据目录：新安装的用户是 `~/.dsh/podcast-notes/data/`。
 
 ```
-podcast-data/
+data/
 ├── library.json                 订阅列表
 ├── episodes/                    每档播客的节目索引
 ├── transcripts/<播客id>/        逐字稿 Markdown
