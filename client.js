@@ -189,6 +189,9 @@ window.__ModuleLoader__.load({
 .pn-field{display:flex;flex-direction:column;gap:5px}
 .pn-field>label{font-size:11px;color:var(--dsw-alias-label-secondary);font-weight:600}
 .pn-field>small{font-size:10.5px;color:var(--dsw-alias-label-tertiary);line-height:1.5}
+.pn-feed-help{font-size:10.5px;color:var(--dsw-alias-label-tertiary);line-height:1.6}
+.pn-feed-help a{color:var(--pn-accent);text-decoration:none;font-weight:600}
+.pn-feed-help a:hover{text-decoration:underline;text-underline-offset:2px}
 .pn-input{height:32px;padding:0 9px;border-radius:7px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);font-size:12px;outline:none;width:100%}
 .pn-input:focus{border-color:color-mix(in srgb,var(--pn-accent) 55%,var(--dsw-alias-border-l2))}
 .pn-input.mono{font-family:var(--ds-font-family-code,ui-monospace,monospace);font-size:11px}
@@ -1573,6 +1576,25 @@ window.__ModuleLoader__.load({
                 },
                 spellCheck: false,
               }),
+              h(
+                'div',
+                { className: 'pn-feed-help' },
+                '不知道 RSS 地址？去 ',
+                h(
+                  'a',
+                  {
+                    href: 'https://getpodcast.xyz/',
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                    onClick: (event) => {
+                      event.preventDefault();
+                      openExternalUrl('https://getpodcast.xyz/');
+                    },
+                  },
+                  'getpodcast.xyz',
+                ),
+                ' 找现成的常见播客 RSS；里面也有 iPhone 快捷指令，可以把小宇宙、Apple Podcasts 等链接转成 RSS。',
+              ),
               h('small', null, '先读取 RSS，确认节目和分类后再添加。支持小宇宙、XYZ 等标准 RSS 2.0。'),
             ),
             probe
