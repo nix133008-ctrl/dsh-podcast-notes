@@ -48,9 +48,16 @@ window.__ModuleLoader__.load({
 .pn-btn-ghost:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .pn-btn-icon{width:30px;padding:0}
 .pn-btn-sm{height:26px;font-size:11px;padding:0 9px;border-radius:7px}
-.pn-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(286px,338px) minmax(0,1fr)}
+.pn-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(286px,338px) 7px minmax(0,1fr)}
 .pn-side{min-width:0;min-height:0;display:flex;flex-direction:column;border-right:1px solid var(--dsw-alias-border-l2);background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 38%,var(--dsw-alias-bg-layer-1))}
 .pn-side-top{flex:none;padding:10px 10px 6px;display:flex;flex-direction:column;overflow:hidden;border-bottom:1px solid var(--dsw-alias-border-l2)}
+.pn-side-resizer{position:relative;cursor:ew-resize;touch-action:none;background:transparent}
+.pn-side-resizer::before{content:'';position:absolute;left:2px;top:50%;width:3px;height:42px;margin-top:-21px;border-radius:3px;background:color-mix(in srgb,var(--dsw-alias-label-tertiary) 30%,transparent);transition:background .15s,height .15s}
+.pn-side-resizer:hover::before,.pn-side-resizer:active::before{height:64px;background:color-mix(in srgb,var(--pn-accent) 60%,var(--dsw-alias-border-l2))}
+.pn-side-collapsed .pn-side,.pn-side-collapsed .pn-side-resizer{display:none}
+.pn-side-reveal{position:absolute;left:0;top:96px;z-index:6;display:flex;align-items:center;justify-content:center;width:22px;height:54px;padding:0;border:1px solid var(--dsw-alias-border-l2);border-left:0;border-radius:0 8px 8px 0;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);cursor:pointer}
+.pn-side-reveal:hover{background:color-mix(in srgb,var(--pn-accent) 10%,var(--dsw-alias-bg-layer-2));color:var(--pn-accent)}
+.pn-compact .pn-side-resizer,.pn-compact .pn-side-reveal{display:none}
 .pn-chips{display:flex;flex-wrap:nowrap;gap:5px;padding-bottom:2px;flex:none;overflow-x:auto;scrollbar-width:none}
 .pn-chips::-webkit-scrollbar{display:none}
 .pn-feed-resizer{flex:none;height:7px;margin:-1px 0 0;cursor:ns-resize;position:relative;touch-action:none}
@@ -101,7 +108,7 @@ window.__ModuleLoader__.load({
 .pn-badge-new{color:var(--pn-accent);border-color:color-mix(in srgb,var(--pn-accent) 40%,transparent);background:var(--pn-accent-soft)}
 .pn-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:28px 20px;text-align:center;color:var(--dsw-alias-label-secondary);font-size:12px;line-height:1.6}
 .pn-empty b{color:var(--dsw-alias-label-primary);font-size:13px}
-.pn-detail{min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--dsw-alias-bg-layer-1)}
+.pn-detail{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--dsw-alias-bg-layer-1)}
 .pn-detail-head{flex:none;padding:16px 20px 0;border-bottom:1px solid var(--dsw-alias-border-l2);background:linear-gradient(180deg,color-mix(in srgb,var(--pn-accent) 4%,transparent),transparent)}
 .pn-detail-eyebrow{display:flex;align-items:center;gap:6px;color:var(--dsw-alias-label-secondary);font-size:10.5px;margin-bottom:5px}
 .pn-detail-title{font-size:19px;line-height:1.4;font-weight:660;letter-spacing:-.015em;margin:0;overflow-wrap:anywhere}
@@ -230,7 +237,7 @@ window.__ModuleLoader__.load({
 .pn-compact .pn-compact-back{display:flex;align-items:center;gap:6px;margin-bottom:7px}
 .pn-compact .pn-tabs{gap:0;overflow-x:auto;scrollbar-width:none}
 .pn-compact .pn-tab{padding:7px 8px 8px;font-size:11.5px;white-space:nowrap}
-@media (max-width:760px){.pn-body{grid-template-columns:minmax(230px,44%) minmax(0,1fr)}.pn-header{padding:10px 12px}.pn-detail-head{padding:12px 14px 0}.pn-detail-body{padding:12px 14px 32px}}
+@media (max-width:760px){.pn-body{grid-template-columns:minmax(230px,44%) 7px minmax(0,1fr)}.pn-header{padding:10px 12px}.pn-detail-head{padding:12px 14px 0}.pn-detail-body{padding:12px 14px 32px}}
 `;
       document.head.appendChild(style);
     }
@@ -1725,28 +1732,65 @@ window.__ModuleLoader__.load({
       );
     }
 
+    const UI_STATE_PREFIX = 'podcast-notes.ui.v1';
+
+    function uiStateKey(compact) {
+      return `${UI_STATE_PREFIX}.${compact ? 'compact' : 'main'}`;
+    }
+
+    function readUiState(key) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return {};
+        const value = JSON.parse(raw);
+        return value && typeof value === 'object' ? value : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function writeUiState(key, patch) {
+      try {
+        const next = { ...readUiState(key), ...patch, updatedAt: Date.now() };
+        localStorage.setItem(key, JSON.stringify(next));
+      } catch {
+        // ignore storage failures
+      }
+    }
+
     function Panel({ compact = false } = {}) {
+      const uiKey = uiStateKey(compact);
+      const savedUi = useMemo(() => readUiState(uiKey), [uiKey]);
+      const [uiRestored, setUiRestored] = useState(false);
       const [state, setState] = useState(null);
       const [bootError, setBootError] = useState('');
-      const [category, setCategory] = useState('全部');
-      const [feedId, setFeedId] = useState('');
+      const [category, setCategory] = useState(savedUi.category || '全部');
+      const [feedId, setFeedId] = useState(savedUi.feedId || '');
+      const detailBodyRef = useRef(null);
+      const pendingScrollRef = useRef(Number(savedUi.detailScrollTop) || 0);
+      const lastScrollRef = useRef(Number(savedUi.detailScrollTop) || 0);
+      const restoredTabRef = useRef(typeof savedUi.tab === 'string' ? savedUi.tab : '');
+      const scrollSaveTimer = useRef(null);
+      const uiSnapshotRef = useRef({});
       const [feed, setFeed] = useState(null);
       const [episodes, setEpisodes] = useState([]);
       const [episodesFeedId, setEpisodesFeedId] = useState('');
       const [episodesLoading, setEpisodesLoading] = useState(false);
       const [episodesError, setEpisodesError] = useState('');
-      const [selectedGuid, setSelectedGuid] = useState('');
-      const [compactDetail, setCompactDetail] = useState(false);
+      const [selectedGuid, setSelectedGuid] = useState(savedUi.selectedGuid || '');
+      const [compactDetail, setCompactDetail] = useState(Boolean(savedUi.compactDetail));
       const [detail, setDetail] = useState(null);
       const [detailLoading, setDetailLoading] = useState(false);
-      const [tab, setTab] = useState('intro');
+      const [tab, setTab] = useState(savedUi.tab || 'intro');
       const [query, setQuery] = useState('');
       const [filter, setFilter] = useState('all');
-      const [libraryView, setLibraryView] = useState('all');
+      const [libraryView, setLibraryView] = useState(
+        ['all', 'unread', 'starred'].includes(savedUi.libraryView) ? savedUi.libraryView : 'all',
+      );
       const [libraryEpisodes, setLibraryEpisodes] = useState([]);
       const [libraryLoading, setLibraryLoading] = useState(false);
       const [libraryError, setLibraryError] = useState('');
-      const [detailFeedId, setDetailFeedId] = useState('');
+      const [detailFeedId, setDetailFeedId] = useState(savedUi.detailFeedId || '');
       const [jobs, setJobs] = useState([]);
       const [busy, setBusy] = useState('');
       const [refreshing, setRefreshing] = useState(false);
@@ -1770,6 +1814,21 @@ window.__ModuleLoader__.load({
           return 196;
         }
       });
+      const [sideWidth, setSideWidth] = useState(() => {
+        try {
+          const saved = Number(localStorage.getItem('podcast-notes.sideWidth'));
+          return Number.isFinite(saved) && saved >= 220 ? Math.min(saved, 560) : 320;
+        } catch {
+          return 320;
+        }
+      });
+      const [sideCollapsed, setSideCollapsed] = useState(() => {
+        try {
+          return localStorage.getItem('podcast-notes.sideCollapsed') === '1';
+        } catch {
+          return false;
+        }
+      });
       const detailRef = useRef(null);
       const jobsRef = useRef([]);
       const highlightCount = useMemo(() => {
@@ -1777,6 +1836,58 @@ window.__ModuleLoader__.load({
         if (!text) return 0;
         return (text.match(/==[^=]+?==/g) || []).length;
       }, [detail?.notes]);
+
+      uiSnapshotRef.current = {
+        feedId,
+        selectedGuid,
+        detailFeedId,
+        libraryView,
+        category,
+        tab,
+        compactDetail,
+      };
+
+      const persistUi = () => {
+        if (!uiRestored) return;
+        const live = detailBodyRef.current?.scrollTop;
+        const top =
+          Number.isFinite(live) && (live > 0 || lastScrollRef.current === 0) ? live : lastScrollRef.current;
+        writeUiState(uiKey, {
+          ...uiSnapshotRef.current,
+          detailScrollTop: top,
+        });
+      };
+
+      const handleDetailScroll = () => {
+        if (!uiRestored) return;
+        const top = detailBodyRef.current?.scrollTop || 0;
+        lastScrollRef.current = top;
+        clearTimeout(scrollSaveTimer.current);
+        scrollSaveTimer.current = setTimeout(() => {
+          writeUiState(uiKey, { ...uiSnapshotRef.current, detailScrollTop: top });
+        }, 180);
+      };
+
+      useEffect(() => {
+        lastScrollRef.current = 0;
+        if (detailBodyRef.current) detailBodyRef.current.scrollTop = 0;
+      }, [selectedGuid]);
+
+      useEffect(() => {
+        if (!uiRestored || !state) return;
+        writeUiState(uiKey, uiSnapshotRef.current);
+      }, [uiRestored, state, feedId, selectedGuid, detailFeedId, libraryView, category, tab, compactDetail, uiKey]);
+
+      useEffect(() => {
+        const onHide = () => persistUi();
+        window.addEventListener('pagehide', onHide);
+        return () => {
+          window.removeEventListener('pagehide', onHide);
+          clearTimeout(scrollSaveTimer.current);
+          persistUi();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [uiKey, uiRestored]);
 
       const showToast = (text, kind = 'info') => {
         setToast({ text, kind, id: Date.now() });
@@ -1822,6 +1933,44 @@ window.__ModuleLoader__.load({
         window.addEventListener('pointercancel', done);
       };
 
+      const startSideResize = (event) => {
+        if (event.button !== undefined && event.button !== 0) return;
+        event.preventDefault();
+        const startX = event.clientX;
+        const startWidth = sideWidth;
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'ew-resize';
+        const move = (moveEvent) => {
+          setSideWidth(Math.max(240, Math.min(560, startWidth + moveEvent.clientX - startX)));
+        };
+        const done = () => {
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', done);
+          window.removeEventListener('pointercancel', done);
+          document.body.style.userSelect = '';
+          document.body.style.cursor = '';
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', done);
+        window.addEventListener('pointercancel', done);
+      };
+
+      useEffect(() => {
+        try {
+          localStorage.setItem('podcast-notes.sideWidth', String(Math.round(sideWidth)));
+        } catch {
+          // ignore storage failures
+        }
+      }, [sideWidth]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem('podcast-notes.sideCollapsed', sideCollapsed ? '1' : '0');
+        } catch {
+          // ignore storage failures
+        }
+      }, [sideCollapsed]);
+
       useEffect(() => {
         if (!toast) return;
         const timer = setTimeout(() => setToast(null), 4500);
@@ -1843,8 +1992,30 @@ window.__ModuleLoader__.load({
             const value = await api('state');
             if (!alive) return;
             setState(value);
-            const first = value.feeds?.[0]?.id || '';
-            setFeedId(first);
+            const feeds = value.feeds || [];
+            const first = feeds[0]?.id || '';
+            const wantedFeed = feeds.some((item) => item.id === savedUi.feedId) ? savedUi.feedId : first;
+            setFeedId(wantedFeed);
+            const wantedCategory =
+              savedUi.category === '全部' || (value.categories || []).some((item) => item.name === savedUi.category)
+                ? savedUi.category
+                : '全部';
+            setCategory(wantedCategory);
+            if (['all', 'unread', 'starred'].includes(savedUi.libraryView)) setLibraryView(savedUi.libraryView);
+            const savedDetailFeed = feeds.some((item) => item.id === savedUi.detailFeedId)
+              ? savedUi.detailFeedId
+              : '';
+            setDetailFeedId(savedDetailFeed || wantedFeed);
+            if (savedDetailFeed && savedUi.selectedGuid) {
+              setSelectedGuid(savedUi.selectedGuid);
+              if (savedUi.tab) setTab(savedUi.tab);
+            } else {
+              setSelectedGuid('');
+              pendingScrollRef.current = 0;
+              lastScrollRef.current = 0;
+              restoredTabRef.current = '';
+            }
+            setUiRestored(true);
             try {
               const currentJobs = await api('jobs');
               if (alive) setJobs(Array.isArray(currentJobs) ? currentJobs : []);
@@ -1882,6 +2053,7 @@ window.__ModuleLoader__.load({
       }, []);
 
       useEffect(() => {
+        if (!uiRestored) return;
         if (libraryView !== 'all') return;
         if (!feedId) {
           setFeed(null);
@@ -1918,26 +2090,50 @@ window.__ModuleLoader__.load({
         return () => {
           alive = false;
         };
-      }, [feedId, episodeVersion, libraryView]);
+      }, [feedId, episodeVersion, libraryView, uiRestored]);
 
       useEffect(() => {
+        if (!uiRestored) return;
         if (!detailFeedId || !selectedGuid) {
           setDetail(null);
+          detailRef.current = null;
           return;
         }
         let alive = true;
-        if (detailRef.current?.episode?.guid !== selectedGuid) setDetail(null);
+        if (detailRef.current?.episode?.guid !== selectedGuid) {
+          setDetail(null);
+          detailRef.current = null;
+        }
         setDetailLoading(true);
         api('episode', { feedId: detailFeedId, guid: selectedGuid })
           .then((value) => {
             if (!alive) return;
+            const previous = detailRef.current;
+            const sameEpisode = previous?.episode?.guid === value.episode?.guid;
+            const hadNotes = Boolean(previous?.notes);
+            const hadTranscript = Boolean(previous?.transcript);
             setDetail(value);
             detailRef.current = value;
-            setTab(value.notes ? 'notes' : value.transcript ? 'transcript' : 'intro');
+            if (!sameEpisode) {
+              const preferred = restoredTabRef.current;
+              let nextTab = 'intro';
+              if (preferred === 'notes' && value.notes) nextTab = 'notes';
+              else if (preferred === 'transcript' && value.transcript) nextTab = 'transcript';
+              else if (preferred === 'intro') nextTab = 'intro';
+              else if (value.notes) nextTab = 'notes';
+              else if (value.transcript) nextTab = 'transcript';
+              setTab(nextTab);
+              restoredTabRef.current = '';
+            } else if (!hadNotes && value.notes) {
+              setTab('notes');
+            } else if (!hadNotes && !hadTranscript && value.transcript) {
+              setTab('transcript');
+            }
           })
           .catch((error) => {
             if (!alive) return;
             setDetail(null);
+            detailRef.current = null;
             showToast(`加载这一集失败：${error.message}`, 'error');
           })
           .finally(() => {
@@ -1946,9 +2142,37 @@ window.__ModuleLoader__.load({
         return () => {
           alive = false;
         };
-      }, [detailFeedId, selectedGuid, detailVersion]);
+      }, [detailFeedId, selectedGuid, detailVersion, uiRestored]);
 
       useEffect(() => {
+        const wanted = pendingScrollRef.current;
+        if (!wanted || !detail) return;
+        if (detail.episode?.guid !== savedUi.selectedGuid) return;
+        if (savedUi.tab && tab !== savedUi.tab) return;
+        if (!detailBodyRef.current) return;
+        let attempts = 0;
+        let timer = null;
+        const apply = () => {
+          const body = detailBodyRef.current;
+          if (!body) return;
+          body.scrollTop = wanted;
+          lastScrollRef.current = body.scrollTop;
+          attempts += 1;
+          if (Math.abs(body.scrollTop - wanted) > 2 && attempts < 8) {
+            timer = setTimeout(apply, 80);
+          } else {
+            pendingScrollRef.current = 0;
+          }
+        };
+        const frame = requestAnimationFrame(apply);
+        return () => {
+          cancelAnimationFrame(frame);
+          if (timer) clearTimeout(timer);
+        };
+      }, [detail, tab, savedUi.selectedGuid, savedUi.tab]);
+
+      useEffect(() => {
+        if (!uiRestored) return;
         if (!detailFeedId || !selectedGuid) return;
         if (compact && !compactDetail) return;
         const timer = setTimeout(() => {
@@ -1982,7 +2206,7 @@ window.__ModuleLoader__.load({
             .catch(() => {});
         }, 1500);
         return () => clearTimeout(timer);
-      }, [detailFeedId, selectedGuid, compact, compactDetail]);
+      }, [detailFeedId, selectedGuid, compact, compactDetail, uiRestored]);
 
       const running = jobs.some((job) => job.status === 'running');
       useEffect(() => {
@@ -2353,6 +2577,23 @@ window.__ModuleLoader__.load({
         setNotesDraft('');
       };
 
+      const applySavedNotes = (text, chars) => {
+        // Update the open detail and the list badges in place. Bumping
+        // episodeVersion/detailVersion here would refetch the episode list and
+        // make the left rail visibly reload after every highlight.
+        setDetail((previous) =>
+          previous ? { ...previous, notes: text, episode: { ...previous.episode, notesChars: chars } } : previous,
+        );
+        setEpisodes((list) =>
+          list.map((item) => (item.guid === selectedGuid ? { ...item, notesChars: chars } : item)),
+        );
+        setLibraryEpisodes((list) =>
+          list.map((item) =>
+            item.guid === selectedGuid && item.feedId === activeFeedId ? { ...item, notesChars: chars } : item,
+          ),
+        );
+      };
+
       const saveNotes = async (text) => {
         setSavingNotes(true);
         try {
@@ -2363,8 +2604,7 @@ window.__ModuleLoader__.load({
           });
           setEditingNotes(false);
           setNotesDraft('');
-          setDetailVersion((value) => value + 1);
-          setEpisodeVersion((value) => value + 1);
+          applySavedNotes(text, result?.chars ?? text.length);
           showToast(`笔记已保存（${result?.chars ?? text.length} 字）`, 'ok');
         } catch (error) {
           showToast(error?.message || '保存失败', 'error');
@@ -2400,13 +2640,12 @@ window.__ModuleLoader__.load({
         }
         setSavingNotes(true);
         try {
-          await api('saveNotes', {
+          const saved = await api('saveNotes', {
             feedId: activeFeedId,
             guid: selectedEpisode?.guid || selectedGuid,
             text: result.text,
           });
-          setDetailVersion((value) => value + 1);
-          setEpisodeVersion((value) => value + 1);
+          applySavedNotes(result.text, saved?.chars ?? result.text.length);
           showToast(result.removed ? '已撤销高亮' : '已高亮并保存', 'ok');
         } catch (error) {
           showToast(error?.message || '高亮失败', 'error');
@@ -2424,13 +2663,12 @@ window.__ModuleLoader__.load({
         }
         setSavingNotes(true);
         try {
-          await api('saveNotes', {
+          const saved = await api('saveNotes', {
             feedId: activeFeedId,
             guid: selectedEpisode?.guid || selectedGuid,
             text: updated,
           });
-          setDetailVersion((value) => value + 1);
-          setEpisodeVersion((value) => value + 1);
+          applySavedNotes(updated, saved?.chars ?? updated.length);
           showToast('已撤销高亮', 'ok');
         } catch (error) {
           showToast(error?.message || '撤销失败', 'error');
@@ -2572,6 +2810,18 @@ window.__ModuleLoader__.load({
             'div',
             { className: 'pn-head-actions' },
             refreshing ? h('span', { className: 'pn-spinner' }) : null,
+            !compact
+              ? h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: `pn-btn pn-btn-ghost pn-btn-icon${sideCollapsed ? ' pn-btn-on' : ''}`,
+                    onClick: () => setSideCollapsed((value) => !value),
+                    title: sideCollapsed ? '展开播客列表' : '收起播客列表',
+                  },
+                  h(Icon, { name: 'panel', size: 16 }),
+                )
+              : null,
             h(
               'button',
               { type: 'button', className: 'pn-btn', onClick: () => refreshAll(), disabled: refreshing, title: '刷新全部播客' },
@@ -2592,7 +2842,12 @@ window.__ModuleLoader__.load({
         ),
         h(
           'div',
-          { className: 'pn-body' },
+          {
+            className: `pn-body${!compact && sideCollapsed ? ' pn-side-collapsed' : ''}`,
+            style: !compact
+              ? { gridTemplateColumns: sideCollapsed ? 'minmax(0,1fr)' : `${sideWidth}px 7px minmax(0,1fr)` }
+              : undefined,
+          },
           h(
             'aside',
             { className: `pn-side${libraryView !== 'all' ? ' pn-side-global' : ''}` },
@@ -2633,6 +2888,8 @@ window.__ModuleLoader__.load({
                     feed: item,
                     active: item.id === feedId,
                     onSelect: () => {
+                      pendingScrollRef.current = 0;
+                      restoredTabRef.current = '';
                       if (item.id !== feedId) {
                         // 切播客时先清空详情，等新播客的单集列表回来再选中第一期；
                         // 否则 detailFeedId 已变、selectedGuid 还是上一档的，会打出「找不到这一集」。
@@ -2728,6 +2985,8 @@ window.__ModuleLoader__.load({
                           active: episode.guid === selectedGuid,
                           showFeed: libraryView !== 'all',
                           onSelect: () => {
+                            pendingScrollRef.current = 0;
+                            restoredTabRef.current = '';
                             setDetailFeedId(episode.feedId || feedId);
                             setSelectedGuid(episode.guid);
                             if (compact) setCompactDetail(true);
@@ -2765,9 +3024,30 @@ window.__ModuleLoader__.load({
                           }),
             ),
           ),
+          !compact ? h('div', {
+            className: 'pn-side-resizer',
+            role: 'separator',
+            'aria-orientation': 'vertical',
+            title: '拖动调整左侧宽度；双击恢复默认',
+            onPointerDown: startSideResize,
+            onDoubleClick: () => setSideWidth(320),
+          }) : null,
           h(
             'section',
             { className: 'pn-detail' },
+            !compact && sideCollapsed
+              ? h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'pn-side-reveal',
+                    onClick: () => setSideCollapsed(false),
+                    title: '展开播客列表',
+                    'aria-label': '展开播客列表',
+                  },
+                  h(Icon, { name: 'panel', size: 13 }),
+                )
+              : null,
             selectedEpisode
               ? h(
                   React.Fragment,
@@ -2973,7 +3253,7 @@ window.__ModuleLoader__.load({
                   ),
                   h(
                     'div',
-                    { className: 'pn-detail-body' },
+                    { className: 'pn-detail-body', ref: detailBodyRef, onScroll: handleDetailScroll },
                     activeJob ? h(JobCard, { job: activeJob, onCancel: () => cancelJob(activeJob) }) : null,
                     lastErrorJob ? h('div', { className: 'pn-err' }, `上一次任务失败：${lastErrorJob.error || '未知错误'}`) : null,
                     selectedMissing
