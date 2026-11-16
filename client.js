@@ -38,6 +38,9 @@ window.__ModuleLoader__.load({
 .pn-global-title{display:flex;align-items:center;gap:6px;min-width:0}
 .pn-global-head b{color:var(--dsw-alias-label-primary);font-size:12px;font-weight:650;white-space:nowrap}
 .pn-ep-feed{max-width:42%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--pn-accent)}
+.pn-ep-snippet{margin-top:3px;color:var(--dsw-alias-label-tertiary);font-size:10.5px;line-height:1.55;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
+.pn-search-scope{flex:none;padding:6px 10px 7px;border-bottom:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary);font-size:10.5px;line-height:1.6;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pn-search-scope b{color:var(--pn-accent);font-weight:600}
 .pn-head-actions{display:flex;align-items:center;gap:6px;flex:none}
 .pn-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:30px;padding:0 11px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);font-size:12px;cursor:pointer;transition:background .15s,border-color .15s,color .15s;white-space:nowrap}
 .pn-btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l4)}
@@ -868,6 +871,7 @@ window.__ModuleLoader__.load({
         unread ? h('span', { className: 'pn-unread-dot', 'aria-label': '未读' }) : null,
         episode.starred ? h('span', { className: 'pn-star-badge', 'aria-label': '已标星' }, h(Icon, { name: 'star', size: 13 })) : null,
         h('div', { className: 'pn-ep-title' }, episode.title || '未命名单集'),
+        episode.snippet ? h('div', { className: 'pn-ep-snippet' }, episode.snippet) : null,
         h(
           'div',
           { className: 'pn-ep-meta' },
@@ -1788,6 +1792,10 @@ window.__ModuleLoader__.load({
         ['all', 'unread', 'starred'].includes(savedUi.libraryView) ? savedUi.libraryView : 'all',
       );
       const [libraryEpisodes, setLibraryEpisodes] = useState([]);
+      const [searchResults, setSearchResults] = useState([]);
+      const [searchLoading, setSearchLoading] = useState(false);
+      const [searchError, setSearchError] = useState('');
+      const [searchInfo, setSearchInfo] = useState(null);
       const [libraryLoading, setLibraryLoading] = useState(false);
       const [libraryError, setLibraryError] = useState('');
       const [detailFeedId, setDetailFeedId] = useState(savedUi.detailFeedId || '');
@@ -2305,9 +2313,76 @@ window.__ModuleLoader__.load({
         });
       }, [libraryEpisodes, libraryView, query]);
 
-      const displayEpisodes = libraryView === 'all' ? filteredEpisodes : libraryFiltered;
-      const displayLoading = libraryView === 'all' ? episodesLoading : libraryLoading;
-      const displayError = libraryView === 'all' ? episodesError : libraryError;
+      // 搜索范围 = 当前分类下的所有播客（全部时是所有播客），而不是只看左边选中的一档。
+      const searchScopeFeedIds = useMemo(() => {
+        if (category === '全部') return feeds.map((item) => item.id);
+        return feeds.filter((item) => item.category === category).map((item) => item.id);
+      }, [feeds, category]);
+
+      useEffect(() => {
+        const needle = query.trim();
+        if (!needle) {
+          setSearchResults([]);
+          setSearchError('');
+          setSearchInfo(null);
+          setSearchLoading(false);
+          return undefined;
+        }
+        const activeFilters = [];
+        if (libraryView === 'unread' || libraryView === 'starred') activeFilters.push(libraryView);
+        else if (filter && filter !== 'all') activeFilters.push(filter);
+        let alive = true;
+        setSearchLoading(true);
+        setSearchError('');
+        const timer = setTimeout(() => {
+          api('searchEpisodes', {
+            query: needle,
+            feedIds: searchScopeFeedIds,
+            filters: activeFilters,
+            limit: 200,
+          })
+            .then((value) => {
+              if (!alive) return;
+              setSearchResults(Array.isArray(value.episodes) ? value.episodes : []);
+              setSearchInfo({
+                matched: Number(value.matched) || 0,
+                scopeFeeds: Number(value.scopeFeeds) || 0,
+                categories: value.scope?.categories || [],
+              });
+            })
+            .catch((error) => {
+              if (!alive) return;
+              setSearchError(error.message);
+              setSearchResults([]);
+              setSearchInfo(null);
+            })
+            .finally(() => {
+              if (alive) setSearchLoading(false);
+            });
+        }, 220);
+        return () => {
+          alive = false;
+          clearTimeout(timer);
+        };
+      }, [query, filter, libraryView, searchScopeFeedIds, episodeVersion, detailVersion]);
+
+      // 有搜索词时，结果来自跨播客搜索（范围＝当前分类下的播客）；没有搜索词时显示当前列表。
+      const isSearch = Boolean(query.trim());
+      const displayEpisodes = isSearch
+        ? searchResults
+        : libraryView === 'all'
+          ? filteredEpisodes
+          : libraryFiltered;
+      const displayLoading = isSearch
+        ? searchLoading
+        : libraryView === 'all'
+          ? episodesLoading
+          : libraryLoading;
+      const displayError = isSearch
+        ? searchError
+        : libraryView === 'all'
+          ? episodesError
+          : libraryError;
       const activeFeed = feeds.find((item) => item.id === detailFeedId) || feed;
 
       const selectedEpisode =
@@ -2890,6 +2965,7 @@ window.__ModuleLoader__.load({
                     onSelect: () => {
                       pendingScrollRef.current = 0;
                       restoredTabRef.current = '';
+                      if (query) setQuery('');
                       if (item.id !== feedId) {
                         // 切播客时先清空详情，等新播客的单集列表回来再选中第一期；
                         // 否则 detailFeedId 已变、selectedGuid 还是上一档的，会打出「找不到这一集」。
@@ -2970,6 +3046,26 @@ window.__ModuleLoader__.load({
                   )
                 : null,
             ),
+            isSearch
+              ? h(
+                  'div',
+                  { className: 'pn-search-scope' },
+                  h('span', null, '搜索 '),
+                  h('b', null, query.trim()),
+                  h('span', null, '·'),
+                  h(
+                    'span',
+                    null,
+                    `${libraryView === 'unread' ? '未读 · ' : libraryView === 'starred' ? '收藏 · ' : ''}${
+                      category === '全部'
+                        ? `全部 ${searchInfo?.scopeFeeds ?? searchScopeFeedIds.length} 个播客`
+                        : `${category}分类下 ${searchInfo?.scopeFeeds ?? searchScopeFeedIds.length} 个播客`
+                    }`,
+                  ),
+                  searchInfo ? h('span', null, '·') : null,
+                  searchInfo ? h('span', null, `找到 ${searchInfo.matched} 条`) : null,
+                )
+              : null,
             h(
               'div',
               { className: 'pn-episodes' },
@@ -2983,7 +3079,7 @@ window.__ModuleLoader__.load({
                           key: `${episode.feedId || feedId}:${episode.guid}`,
                           episode,
                           active: episode.guid === selectedGuid,
-                          showFeed: libraryView !== 'all',
+                          showFeed: libraryView !== 'all' || isSearch,
                           onSelect: () => {
                             pendingScrollRef.current = 0;
                             restoredTabRef.current = '';
@@ -3008,7 +3104,11 @@ window.__ModuleLoader__.load({
                           })
                         : h(Empty, {
                             icon: feed ? 'rss' : 'mic',
-                            title: query || filter !== 'all' ? '没有匹配的单集' : '这个播客还没有节目',
+                            title: isSearch
+                              ? `没有找到匹配「${query.trim()}」的单集`
+                              : query || filter !== 'all'
+                                ? '没有匹配的单集'
+                                : '这个播客还没有节目',
                             text:
                               query || filter !== 'all'
                                 ? '换个关键词或筛选条件试试。'

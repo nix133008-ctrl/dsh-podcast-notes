@@ -82,6 +82,39 @@ function feedView(runtime, feed) {
   return { ...feed, category: feedCategory(feed), stats };
 }
 
+// 从节目简介里截一小段命中关键词的上下文，方便在搜索结果里看出「为什么匹配」。
+function buildSnippet(description, needle) {
+  const text = String(description || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  if (!needle) return text.slice(0, 120);
+  const at = text.toLowerCase().indexOf(needle);
+  if (at < 0) return text.slice(0, 120);
+  const start = Math.max(0, at - 40);
+  const end = Math.min(text.length, at + needle.length + 80);
+  return `${start > 0 ? '…' : ''}${text.slice(start, end)}${end < text.length ? '…' : ''}`;
+}
+
+// 纯英文/数字关键词按「单词」匹配，避免搜 AI 时命中 email、again 这类词里的字母。
+function matchesKeyword(haystack, needle) {
+  if (!needle) return true;
+  if (!/^[a-z0-9]+$/i.test(needle)) return haystack.includes(needle);
+  let at = haystack.indexOf(needle);
+  while (at >= 0) {
+    const before = at > 0 ? haystack[at - 1] : '';
+    const after = at + needle.length < haystack.length ? haystack[at + needle.length] : '';
+    if (!/[a-z0-9]/i.test(before) && !/[a-z0-9]/i.test(after)) return true;
+    at = haystack.indexOf(needle, at + 1);
+  }
+  return false;
+}
+
+// 搜索范围说明：涉及几个播客、哪些分类。
+function categoryScope(feeds, allowed) {
+  const list = feeds.filter((feed) => !allowed || allowed.has(feed.id));
+  const categories = [...new Set(list.map((feed) => feedCategory(feed)))];
+  return { count: list.length, categories };
+}
+
 function jobView(job) {
   return {
     id: job.id,
@@ -283,6 +316,64 @@ function buildApi(runtime) {
         filter,
         unreadCount: stats.unreadCount,
         starredCount: stats.starredCount,
+      };
+    },
+
+    // 跨播客搜索：一次搜完当前范围内的所有播客（全部，或某个分类下的若干播客）。
+    async searchEpisodes(payload) {
+      const store = requireStore(runtime);
+      const library = store.getLibrary();
+      const needle = String(payload?.query ?? '').trim().toLowerCase();
+      const scope = Array.isArray(payload?.feedIds) ? payload.feedIds.map(String) : [];
+      const allowed = scope.length ? new Set(scope) : null;
+      const filters = Array.isArray(payload?.filters) ? payload.filters.map(String) : [];
+      const limit = Math.max(1, Math.min(500, Number(payload?.limit) || 200));
+      const items = [];
+      let matched = 0;
+      for (const feed of library.feeds) {
+        if (allowed && !allowed.has(feed.id)) continue;
+        const feedTitle = feed.title || feed.url;
+        const category = feedCategory(feed);
+        for (const episode of store.getEpisodes(feed.id)) {
+          if (filters.includes('unread') && episode.viewedAt) continue;
+          if (filters.includes('starred') && !episode.starred) continue;
+          if (filters.includes('transcript') && !episode.transcriptPath) continue;
+          if (filters.includes('notes') && !episode.notesPath) continue;
+          if (filters.includes('none') && (episode.transcriptPath || episode.notesPath)) continue;
+          const title = String(episode.title || '');
+          const description = String(episode.description || '');
+          const haystack = `${title} ${description}`.toLowerCase();
+          if (!matchesKeyword(haystack, needle)) continue;
+          matched += 1;
+          if (items.length >= limit) continue;
+          items.push({
+            feedId: feed.id,
+            feedTitle,
+            category,
+            guid: episode.guid,
+            title,
+            link: episode.link,
+            pubDate: episode.pubDate,
+            duration: episode.duration,
+            episodeNumber: episode.episodeNumber,
+            image: episode.image || feed.image,
+            transcriptPath: episode.transcriptPath,
+            notesPath: episode.notesPath,
+            transcriptChars: episode.transcriptChars,
+            notesChars: episode.notesChars,
+            viewedAt: episode.viewedAt,
+            starred: Boolean(episode.starred),
+            snippet: buildSnippet(description, needle),
+          });
+        }
+      }
+      items.sort((a, b) => (b.pubDate || 0) - (a.pubDate || 0));
+      return {
+        episodes: items,
+        query: needle,
+        matched,
+        scopeFeeds: allowed ? allowed.size : library.feeds.length,
+        scope: categoryScope(library.feeds, allowed),
       };
     },
 
