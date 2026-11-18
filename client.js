@@ -91,6 +91,9 @@ window.__ModuleLoader__.load({
 .pn-ep:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .pn-ep-on{background:var(--pn-accent-soft);box-shadow:inset 3px 0 var(--pn-accent)}
 .pn-ep-unread .pn-ep-title{font-weight:650}
+.pn-ep-read{opacity:.62}
+.pn-ep-read .pn-ep-title{font-weight:400}
+.pn-ep-readtag{font-size:9.5px;line-height:1;padding:2px 5px;border-radius:4px;background:var(--dsw-alias-bg-layer-3,var(--dsw-alias-bg-layer-2));color:var(--dsw-alias-label-tertiary);border:1px solid var(--dsw-alias-border-l2)}
 .pn-unread-dot{position:absolute;left:8px;top:19px;width:6px;height:6px;border-radius:50%;background:#c2a05a;opacity:.82;box-shadow:0 0 0 2px color-mix(in srgb,#c2a05a 9%,transparent)}
 .pn-star-badge{position:absolute;right:7px;top:7px;color:#d99a1b;display:inline-flex;filter:drop-shadow(0 1px 2px #0000001f)}
 .pn-ep-starred .pn-ep-title{padding-right:19px}
@@ -857,13 +860,14 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function EpisodeRow({ episode, active, onSelect, onContextMenu, showFeed = false }) {
+    function EpisodeRow({ episode, active, onSelect, onContextMenu, showFeed = false, dimRead = false }) {
       const unread = !episode.viewedAt;
+      const readInQueue = dimRead && Boolean(episode.viewedAt);
       return h(
         'button',
         {
           type: 'button',
-          className: `pn-ep${active ? ' pn-ep-on' : ''}${unread ? ' pn-ep-unread' : ''}${episode.starred ? ' pn-ep-starred' : ''}`,
+          className: `pn-ep${active ? ' pn-ep-on' : ''}${unread ? ' pn-ep-unread' : ''}${readInQueue ? ' pn-ep-read' : ''}${episode.starred ? ' pn-ep-starred' : ''}`,
           onClick: onSelect,
           onContextMenu,
           title: episode.starred ? '已标星' : undefined,
@@ -875,6 +879,7 @@ window.__ModuleLoader__.load({
         h(
           'div',
           { className: 'pn-ep-meta' },
+          readInQueue ? h('span', { className: 'pn-ep-readtag' }, '已读') : null,
           showFeed && episode.feedTitle ? h('span', { className: 'pn-ep-feed' }, episode.feedTitle) : null,
           episode.pubDate ? h('span', null, fmtDate(episode.pubDate)) : null,
           episode.duration ? h('span', null, fmtDuration(episode.duration)) : null,
@@ -1792,6 +1797,8 @@ window.__ModuleLoader__.load({
         ['all', 'unread', 'starred'].includes(savedUi.libraryView) ? savedUi.libraryView : 'all',
       );
       const [libraryEpisodes, setLibraryEpisodes] = useState([]);
+      const [unreadSnapshot, setUnreadSnapshot] = useState(null);
+      const [unreadHydrated, setUnreadHydrated] = useState(false);
       const [searchResults, setSearchResults] = useState([]);
       const [searchLoading, setSearchLoading] = useState(false);
       const [searchError, setSearchError] = useState('');
@@ -2190,6 +2197,9 @@ window.__ModuleLoader__.load({
               const stamp = Date.now();
               setEpisodes((list) => list.map((item) => (item.guid === selectedGuid ? { ...item, viewedAt: stamp } : item)));
               setLibraryEpisodes((list) => list.map((item) => (item.guid === selectedGuid ? { ...item, viewedAt: stamp } : item)));
+              setUnreadSnapshot((list) =>
+                Array.isArray(list) ? list.map((item) => (item.guid === selectedGuid ? { ...item, viewedAt: stamp } : item)) : list,
+              );
               setDetail((previous) =>
                 previous?.episode?.guid === selectedGuid
                   ? { ...previous, episode: { ...previous.episode, viewedAt: stamp } }
@@ -2288,11 +2298,13 @@ window.__ModuleLoader__.load({
           .then((value) => {
             if (!alive) return;
             setLibraryEpisodes(Array.isArray(value.episodes) ? value.episodes : []);
+            if (libraryView === 'unread') setUnreadHydrated(true);
           })
           .catch((error) => {
             if (!alive) return;
             setLibraryError(error.message);
             setLibraryEpisodes([]);
+            if (libraryView === 'unread') setUnreadHydrated(true);
           })
           .finally(() => {
             if (alive) setLibraryLoading(false);
@@ -2301,6 +2313,36 @@ window.__ModuleLoader__.load({
           alive = false;
         };
       }, [libraryView, episodeVersion, detailVersion]);
+
+      // 未读是一个“工作队列”：点开一集后列表保留它（标成已读），
+      // 直到用户离开未读视图或点“全部已读”才重建/清空。
+      useEffect(() => {
+        if (libraryView === 'unread') {
+          setUnreadSnapshot([]);
+          setUnreadHydrated(false);
+          setLibraryEpisodes([]);
+        } else {
+          setUnreadSnapshot(null);
+          setUnreadHydrated(false);
+        }
+      }, [libraryView]);
+
+      useEffect(() => {
+        if (libraryView !== 'unread' || !unreadHydrated || libraryLoading) return;
+        setUnreadSnapshot((previous) => {
+          if (!Array.isArray(previous)) return previous;
+          const keyOf = (item) => `${item.feedId || ''}:${item.guid}`;
+          const fresh = new Map(libraryEpisodes.map((item) => [keyOf(item), item]));
+          const merged = previous.map((item) => {
+            const next = fresh.get(keyOf(item));
+            return next ? { ...item, ...next, viewedAt: item.viewedAt || next.viewedAt } : item;
+          });
+          const seen = new Set(merged.map(keyOf));
+          for (const item of libraryEpisodes) if (!seen.has(keyOf(item))) merged.push(item);
+          merged.sort((a, b) => (b.pubDate || 0) - (a.pubDate || 0));
+          return merged;
+        });
+      }, [libraryView, unreadHydrated, libraryLoading, libraryEpisodes]);
 
       const libraryFiltered = useMemo(() => {
         const needle = query.trim().toLowerCase();
@@ -2368,21 +2410,28 @@ window.__ModuleLoader__.load({
 
       // 有搜索词时，结果来自跨播客搜索（范围＝当前分类下的播客）；没有搜索词时显示当前列表。
       const isSearch = Boolean(query.trim());
+      const unreadList = libraryView === 'unread' ? (unreadSnapshot || []) : null;
       const displayEpisodes = isSearch
         ? searchResults
-        : libraryView === 'all'
-          ? filteredEpisodes
-          : libraryFiltered;
+        : libraryView === 'unread'
+          ? unreadList
+          : libraryView === 'all'
+            ? filteredEpisodes
+            : libraryFiltered;
       const displayLoading = isSearch
         ? searchLoading
-        : libraryView === 'all'
-          ? episodesLoading
-          : libraryLoading;
+        : libraryView === 'unread'
+          ? (unreadList.length ? false : libraryLoading)
+          : libraryView === 'all'
+            ? episodesLoading
+            : libraryLoading;
       const displayError = isSearch
         ? searchError
-        : libraryView === 'all'
-          ? episodesError
-          : libraryError;
+        : libraryView === 'unread'
+          ? (unreadList.length ? '' : libraryError)
+          : libraryView === 'all'
+            ? episodesError
+            : libraryError;
       const activeFeed = feeds.find((item) => item.id === detailFeedId) || feed;
 
       const selectedEpisode =
@@ -2460,6 +2509,7 @@ window.__ModuleLoader__.load({
         if (!window.confirm(`把全部播客的 ${unread} 集更新都标为已读？`)) return;
         try {
           await api('markAllViewed');
+          setUnreadSnapshot([]);
           await reload();
           showToast(`已把 ${unread} 集标为已读`, 'ok');
         } catch (error) {
@@ -2516,6 +2566,9 @@ window.__ModuleLoader__.load({
           const delta = viewed ? -1 : 1;
           setEpisodes((list) => list.map((item) => (item.guid === episode.guid ? { ...item, viewedAt: stamp } : item)));
           setLibraryEpisodes((list) => list.map((item) => (item.guid === episode.guid ? { ...item, viewedAt: stamp } : item)));
+          setUnreadSnapshot((list) =>
+            Array.isArray(list) ? list.map((item) => (item.guid === episode.guid ? { ...item, viewedAt: stamp } : item)) : list,
+          );
           setDetail((previous) =>
             previous?.episode?.guid === episode.guid ? { ...previous, episode: { ...previous.episode, viewedAt: stamp } } : previous,
           );
@@ -3080,6 +3133,7 @@ window.__ModuleLoader__.load({
                           episode,
                           active: episode.guid === selectedGuid,
                           showFeed: libraryView !== 'all' || isSearch,
+                          dimRead: libraryView === 'unread' && !isSearch,
                           onSelect: () => {
                             pendingScrollRef.current = 0;
                             restoredTabRef.current = '';
