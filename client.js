@@ -2445,6 +2445,8 @@ window.__ModuleLoader__.load({
       const lastErrorJob = !activeJob ? episodeJobs.find((job) => job.status === 'error') : null;
       const hasTranscript = Boolean(detail?.transcript);
       const hasNotes = Boolean(detail?.notes);
+      const detailEpisode = detail?.episode && detail.episode.guid === selectedEpisode?.guid ? detail.episode : null;
+      const introText = String((detailEpisode?.description ?? selectedEpisode?.description) || '').trim();
 
       const reload = async () => {
         try {
@@ -3526,7 +3528,7 @@ window.__ModuleLoader__.load({
                           : h(
                               React.Fragment,
                               null,
-                              selectedEpisode.description
+                              introText
                                 ? h(
                                     React.Fragment,
                                     null,
@@ -3536,7 +3538,7 @@ window.__ModuleLoader__.load({
                                       h(
                                         'span',
                                         { style: { color: 'var(--dsw-alias-label-secondary)', fontSize: 11 } },
-                                        `节目简介 · ${selectedEpisode.description.length} 字`,
+                                        `节目简介 · ${introText.length} 字`,
                                       ),
                                       h('span', { className: 'pn-spacer' }),
                                       h(
@@ -3544,15 +3546,17 @@ window.__ModuleLoader__.load({
                                         {
                                           type: 'button',
                                           className: 'pn-btn pn-btn-sm',
-                                          onClick: () => copy(selectedEpisode.description, '简介'),
+                                          onClick: () => copy(introText, '简介'),
                                         },
                                         h(Icon, { name: 'copy', size: 12 }),
                                         '复制全文',
                                       ),
                                     ),
-                                    h('p', { className: 'pn-desc' }, selectedEpisode.description),
+                                    h('p', { className: 'pn-desc' }, introText),
                                   )
-                                : h(Empty, { icon: 'file', title: '这一集没有简介', text: '可以直接获取逐字稿。' }),
+                                : detailLoading
+                                  ? h(Empty, { icon: 'file', title: '正在加载简介…' })
+                                  : h(Empty, { icon: 'file', title: '这一集没有简介', text: '可以直接获取逐字稿。' }),
                               !hasTranscript
                                 ? h(
                                     'div',
